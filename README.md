@@ -65,6 +65,7 @@ graph TB
 ### 🎭 Flow Architecture
 
 #### **Flow A: Summary-Based Processing**
+
 1. **📄 Text Extraction**: Gemini 2.5 Pro extracts all text content
 2. **📝 Summarization**: Gemini 2.0 Flash creates concise summaries
 3. **🏷️ Keyword Extraction**: spaCy identifies key entities and phrases
@@ -72,6 +73,7 @@ graph TB
 5. **💾 Storage**: Summary and keywords stored in ChromaDB summary collection
 
 #### **Flow B: Chunk-Based Processing**
+
 1. **📄 Text Extraction**: Gemini 2.5 Pro extracts all text content
 2. **✂️ Smart Chunking**: Header-based text segmentation using regex patterns
 3. **🏷️ Per-Chunk Keywords**: spaCy extracts keywords for each chunk
@@ -84,7 +86,7 @@ graph TB
 
 - **📁 Multi-Format Support**: PDF, DOC, DOCX, TXT, PNG, JPG, JPEG
 - **🔄 Parallel Processing**: Dual-flow architecture for maximum efficiency
-- **🤖 Advanced AI Models**: 
+- **🤖 Advanced AI Models**:
   - Gemini 2.5 Pro for text extraction
   - Gemini 2.0 Flash for summarization
 - **🧠 NLP Processing**: spaCy for entity recognition and keyword extraction
@@ -121,12 +123,14 @@ graph TB
 ### 🔧 Quick Setup
 
 1. **Clone the Repository**
+
 ```bash
 git clone <repository-url>
 cd dual-flow-document-pipeline
 ```
 
-2. **Create Virtual Environment**
+1. **Create Virtual Environment**
+
 ```bash
 python -m venv .venv
 # Windows
@@ -135,17 +139,20 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-3. **Install Dependencies**
+1. **Install Dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Download spaCy Model**
+1. **Download spaCy Model**
+
 ```bash
 python -m spacy download en_core_web_sm
 ```
 
-5. **Setup Environment Variables**
+1. **Setup Environment Variables**
+
 ```bash
 cp .env.example .env
 # Edit .env with your credentials
@@ -156,6 +163,7 @@ cp .env.example .env
 ### 🔑 Environment Variables
 
 Create a `.env` file in the project root:
+
 ```env
 # Google AI Configuration
 GOOGLE_API_KEY=your_google_api_key_here
@@ -275,6 +283,7 @@ logging.basicConfig(
 ### 🏗️ Core Classes
 
 #### `DocumentProcessor`
+
 Main processing engine for dual-flow document processing.
 
 ```python
@@ -286,6 +295,7 @@ class DocumentProcessor:
 ```
 
 #### `PipelineOrchestrator`
+
 High-level orchestration for batch processing.
 
 ```python
@@ -296,6 +306,7 @@ class PipelineOrchestrator:
 ```
 
 #### `GCSBucketMonitor`
+
 Continuous monitoring and processing of GCS bucket changes.
 
 ```python
@@ -309,6 +320,7 @@ class GCSBucketMonitor:
 ### 📊 Data Models
 
 #### `FlowAResult`
+
 Summary-based processing results.
 
 ```python
@@ -324,6 +336,7 @@ class FlowAResult:
 ```
 
 #### `FlowBResult`
+
 Chunk-based processing results.
 
 ```python
@@ -340,21 +353,25 @@ class FlowBResult:
 ### 🧠 AI Models Integration
 
 #### **Gemini 2.5 Pro (Text Extraction)**
+
 - **Purpose**: Extract all textual content from documents
 - **Features**: OCR capabilities, multi-format support
 - **Configuration**: Configurable via `gemini_extraction_model` parameter
 
 #### **Gemini 2.0 Flash (Summarization)**
+
 - **Purpose**: Generate concise document summaries
 - **Features**: Fast processing, context-aware summarization
 - **Configuration**: Configurable via `gemini_summary_model` parameter
 
 #### **Sentence Transformers (Embeddings)**
+
 - **Default Model**: `all-MiniLM-L6-v2`
 - **Purpose**: Generate vector embeddings for semantic search
 - **Features**: 384-dimensional vectors, multilingual support
 
 #### **spaCy NLP (Keyword Extraction)**
+
 - **Model**: `en_core_web_sm`
 - **Features**: Named entity recognition, noun phrase extraction
 - **Output**: Top 20 keywords per document/chunk
@@ -362,13 +379,15 @@ class FlowBResult:
 ### 🏗️ Vector Storage
 
 #### **ChromaDB Integration**
+
 - **Cloud Support**: ChromaDB Cloud with API key authentication
 - **Local Fallback**: Automatic fallback to local ChromaDB instance
-- **Collections**: 
+- **Collections**:
   - `summary_collection`: Document summaries and keywords
   - `per_doc_collection`: Individual document chunks
 
 #### **Embedding Strategy**
+
 - **Summary Embeddings**: Single vector per document summary
 - **Keyword Embeddings**: Individual vectors for each keyword
 - **Chunk Embeddings**: Separate vectors for each document chunk
@@ -376,11 +395,13 @@ class FlowBResult:
 ### ⚡ Performance Optimization
 
 #### **Multi-threading**
+
 - **ThreadPoolExecutor**: Configurable worker threads
 - **Batch Processing**: Efficient resource utilization
 - **Concurrent Flows**: Parallel Flow A and Flow B processing
 
 #### **Caching Strategy**
+
 - **Streamlit Caching**: Resource caching for AI models and clients
 - **Content Deduplication**: SHA-256 hash-based duplicate detection
 - **Model Reuse**: Singleton pattern for expensive model initialization
@@ -410,6 +431,7 @@ class FlowBResult:
 ### ❌ Common Issues
 
 #### **Import Errors**
+
 ```bash
 # spaCy model not found
 python -m spacy download en_core_web_sm
@@ -419,6 +441,7 @@ pip install google-cloud-storage google-generativeai
 ```
 
 #### **Authentication Issues**
+
 ```bash
 # Google Cloud authentication
 gcloud auth application-default login
@@ -428,6 +451,7 @@ export GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account.json"
 ```
 
 #### **ChromaDB Connection**
+
 ```python
 # Check ChromaDB configuration
 CHROMA_API_KEY=your_api_key
@@ -455,14 +479,19 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 1. **Fork the Repository**
 2. **Create Feature Branch**
+
    ```bash
    git checkout -b feature/amazing-feature
    ```
+
 3. **Install Development Dependencies**
+
    ```bash
    pip install -r requirements-dev.txt
    ```
+
 4. **Run Tests**
+
    ```bash
    pytest tests/
    ```
@@ -498,18 +527,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-<div align="center">
-
-**🚀 Built with ❤️ for efficient document processing**
+## 🌟 Built with ❤️ for efficient document processing
 
 [![Made with Python](https://img.shields.io/badge/Made%20with-Python-blue.svg)](https://python.org)
 [![Powered by AI](https://img.shields.io/badge/Powered%20by-AI-green.svg)](https://ai.google.dev)
-
-</div>
-4. **Vector Storage**: The embeddings and associated metadata (e.g., filename, source) are stored in their respective ChromaDB collections (`summary_collection` and `per_doc_collection`).
-
-### Search Flow
-
-1. **Query Embedding**: The user's text query is converted into a vector embedding using the same `SentenceTransformer` model.
-2. **Semantic Search**: This query vector is used to perform a similarity search against both the `summary_collection` and `per_doc_collection`. ChromaDB returns the most semantically similar documents or chunks.
-3. **Result Display**: The application displays the search results, including the matching text, its source, and a similarity score (distance). It also highlights keywords from the original query within the results for improved readability.
