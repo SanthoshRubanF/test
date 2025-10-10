@@ -1,4 +1,4 @@
-# 🚀 GCS Document Ingestion Pipeline - Dual-Flow Architecture
+# 🚀 MAGi OCR Real-Time Document Processing Pipeline
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/)
@@ -6,454 +6,500 @@
 [![AI](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlebard&logoColor=white)](https://ai.google.dev/)
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B6B?style=for-the-badge)](https://www.trychroma.com/)
 
-A **production-ready, dual-flow document processing pipeline** built with FastAPI that leverages **ChromaDB Cloud**, **Gemini 2.5 Pro + 2.0 Flash**, and advanced NLP for intelligent document ingestion with real-time monitoring at 10-second intervals.
+A **production-ready, real-time document processing pipeline** built with FastAPI that combines **Google Cloud Storage**, **Pub/Sub**, **Gemini AI**, **ChromaDB Cloud**, and advanced NLP for intelligent document ingestion with dual-flow architecture and **1-second real-time monitoring**.
 
-## ✨ Features
+## ✨ Key Features
 
-### 🔀 Dual-Flow Architecture
+### 🔀 **Dual-Flow Architecture**
 
-- **Flow A: Summary Processing**: Gemini 2.0 Flash → spaCy Keywords → Sentence Transformers → ChromaDB Summary Collection
-- **Flow B: Chunk Processing**: Header-Based Chunking → spaCy Keywords → Sentence Transformers → ChromaDB Document Collection
-- **Concurrent Processing**: Both flows execute simultaneously with ThreadPoolExecutor
+- **Flow A (Summary Processing)**: Document → Gemini 2.5 Pro OCR → Gemini 2.0 Flash Summarization → ChromaDB Summary Collection
+- **Flow B (Chunk Processing)**: Document → Gemini 2.5 Pro OCR → Header-Based Chunking → ChromaDB Per-Doc Collection
+- **Concurrent Processing**: Both flows execute simultaneously with ThreadPoolExecutor optimization
 
-### 🤖 AI-Powered Processing
+### ⚡ **Real-Time Monitoring**
 
-- **Gemini 2.5 Pro**: Advanced OCR and text extraction from images and documents
-- **Gemini 2.0 Flash**: High-speed AI summarization for Flow A processing
-- **Smart Keyword Extraction**: spaCy NLP for both summary and chunk-level keywords
-- **Real-Time Processing**: 10-second monitoring intervals for near-instantaneous document processing
+- **1-Second Polling**: Near-instantaneous document detection
+- **Pub/Sub Integration**: Google Cloud Pub/Sub for instant notifications
+- **Dual Detection**: Polling + Pub/Sub fallback for maximum reliability
+- **Live Statistics**: Real-time processing metrics and performance tracking
 
-### 🔍 Advanced Search Capabilities
+### 🤖 **Advanced AI Processing**
 
-- **Dual Collection Search**: Search summaries (Flow A) or document chunks (Flow B)
-- **Semantic Search**: 384-dimensional embeddings with cosine similarity
-- **Vector-Based Retrieval**: Sentence Transformers with optimized query matching
-- **Flexible Search Endpoints**: `/search/summary` and `/search/chunks`
+- **Gemini 2.5 Pro**: State-of-the-art OCR and text extraction from PDFs, images
+- **Gemini 2.0 Flash**: High-speed AI summarization with rate limiting
+- **spaCy NLP**: Intelligent keyword extraction and text analysis
+- **Sentence Transformers**: 384-dimensional embeddings for semantic search
 
-### ☁️ Cloud-Native Integration
+### 🔍 **Semantic Search & Storage**
 
-- **ChromaDB Cloud**: Production cloud instance at api.trychroma.com with SSL
-- **Google Cloud Storage**: Real-time bucket monitoring with 10-second intervals
-- **Tenant-Based Authentication**: Secure multi-tenant ChromaDB access
-- **Scalable Architecture**: Built for production workloads with concurrent processing
+- **ChromaDB Cloud**: Production-grade vector database with cloud hosting
+- **Dual Collections**: Separate storage for summaries (`summary_collection`) and chunks (`per_doc_collection`)
+- **Vector Search**: Cosine similarity-based semantic retrieval
+- **Metadata Enrichment**: Full document metadata, keywords, and processing statistics
 
-### 🚀 Performance Optimized
+### 📊 **Enterprise Features**
 
-- **Lazy Loading**: Models load on-demand for sub-3-second startup
-- **Concurrent Dual-Flow**: ThreadPoolExecutor with configurable worker pools
-- **Real-time Monitoring**: 10-second intervals for immediate document detection
-- **Environment-Configurable**: Monitoring intervals from 5-300 seconds
+- **RESTful API**: 15+ endpoints for complete pipeline control
+- **Real-Time Analytics**: Processing statistics, success rates, error tracking
+- **Folder Filtering**: Advanced GCS path filtering with include/exclude patterns
+- **Scalable Processing**: Configurable worker pools and batch sizes
+- **Health Monitoring**: Comprehensive system status and diagnostics
 
-## 🏗️ Dual-Flow Architecture
+## 🏗️ Architecture Overview
 
-```text
-                           📁 GCS Document Bucket
-                                    │
-                        ┌───────────▼───────────┐
-                        │   PipelineOrchestrator │
-                        │   (10s Monitoring)     │
-                        └─────────┬─────────────┘
-                                  │
-                          ┌──────▼──────┐
-                          │ Gemini 2.5  │ (Text Extraction)
-                          │    Pro      │
-                          └─────┬───────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │  DualFlowProcessor    │
-                    │  (ThreadPoolExecutor) │
-                    └───┬───────────────┬───┘
-                        │               │
-              ┌────────▼────────┐     ┌▼─────────────┐
-              │    FLOW A       │     │    FLOW B    │
-              │   Summary       │     │   Chunks     │
-              │  Processing     │     │ Processing   │
-              └────────┬────────┘     └┬─────────────┘
-                       │               │
-            ┌─────────▼─────────┐     ┌▼──────────────┐
-            │ Gemini 2.0 Flash │     │ Header-Based  │
-            │  Summarization   │     │   Chunking    │
-            └─────────┬─────────┘     └┬──────────────┘
-                      │                │
-            ┌─────────▼─────────┐     ┌▼──────────────┐
-            │ spaCy Keywords    │     │ spaCy Keywords│
-            │   Extraction      │     │  Per Chunk    │
-            └─────────┬─────────┘     └┬──────────────┘
-                      │                │
-         ┌────────────▼────────────────▼─────────────┐
-         │        Sentence Transformers              │
-         │      384-dim Embeddings                   │
-         └────────────┬─────────────────────────────┘
-                      │
-         ┌────────────▼─────────────────────────────┐
-         │           ChromaDB Cloud                 │
-         │        api.trychroma.com                 │
-         │  ┌─────────────┐  ┌──────────────────┐   │
-         │  │summary_     │  │per_doc_          │   │
-         │  │collection   │  │collection        │   │
-         │  │(Flow A)     │  │(Flow B)          │   │
-         │  └─────────────┘  └──────────────────┘   │
-         └──────────────────────────────────────────┘
-```
-
-## 🔧 Installation
-
-### Prerequisites
-
-- Python 3.8+
-- Google Cloud Account with Storage API enabled
-- Gemini API Key
-- Virtual Environment (recommended)
-
-### 1. Clone Repository
-
-```bash
-git clone <repository-url>
-cd Test
-```
-
-### 2. Create Virtual Environment
-
-```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Linux/Mac
-source .venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Download spaCy Model
-
-```bash
-python -m spacy download en_core_web_sm
-```
-
-### 5. Environment Configuration
-
-Create a `.env` file in the project root:
-
-```env
-# Google Cloud & Gemini AI Configuration
-GEMINI_API_KEY=your_gemini_api_key_here
-GOOGLE_APPLICATION_CREDENTIALS=path/to/your/gcp-credentials.json
-
-# GCS Bucket Configuration  
-GOOGLE_CLOUD_PROJECT=your-gcp-project-id
-GCS_BUCKET_NAME=your-gcs-bucket-name
-GCS_BUCKET_PREFIX=documents/
-
-# ChromaDB Cloud Configuration (Required)
-CHROMA_HOST=api.trychroma.com
-CHROMA_PORT=443
-CHROMA_API_KEY=your_chroma_cloud_api_key_here
-CHROMA_TENANT=your_tenant_id_here
-CHROMA_DATABASE=vector_db
-CHROMA_USE_SSL=true
-
-# Pipeline Configuration (Optional)
-MAX_WORKERS=3
-BATCH_SIZE=10
-MONITORING_INTERVAL=10
-MAX_FILE_SIZE_MB=100
+```mermaid
+graph TB
+    A[GCS Bucket: magi-mvp-dev-index-data] --> B[Real-Time Orchestrator]
+    B --> C[Pub/Sub Listener]
+    B --> D[1s Polling Monitor]
+    
+    B --> E[Dual-Flow Processor]
+    E --> F[Flow A: Summaries]
+    E --> G[Flow B: Chunks]
+    
+    F --> H[Gemini 2.5 Pro OCR]
+    F --> I[Gemini 2.0 Flash Summary]
+    F --> J[spaCy Keywords]
+    F --> K[Sentence Transformers]
+    F --> L[ChromaDB: summary_collection]
+    
+    G --> M[Gemini 2.5 Pro OCR]
+    G --> N[Header-Based Chunking]
+    G --> O[spaCy Keywords]
+    G --> P[Sentence Transformers]
+    G --> Q[ChromaDB: per_doc_collection]
+    
+    L --> R[Semantic Search API]
+    Q --> R
 ```
 
 ## 🚀 Quick Start
 
-### Launch the Application
+### Prerequisites
+
+- Python 3.8+
+- Google Cloud Project with GCS and Pub/Sub enabled
+- ChromaDB Cloud account
+- Gemini AI API key
+
+### 1. Installation
 
 ```bash
-uvicorn test:app --host 0.0.0.0 --port 8000 --reload
+# Clone repository
+git clone <repository-url>
+cd "Test MAGi OCR POC Backend"
+
+# Create virtual environment
+python -m venv .venv
+
+# Activate virtual environment
+# Windows:
+.venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### Alternative Launch Method
+### 2. Environment Configuration
 
-```bash
-python test.py
+Create `.env` file in the project root:
+
+```env
+# Google Cloud Configuration
+GOOGLE_CLOUD_PROJECT=magi-mvp-dev
+GCS_BUCKET_NAME=magi-mvp-dev-index-data
+GCS_BUCKET_PREFIX=inspection_docs
+
+# Pub/Sub Configuration (Optional)
+ENABLE_PUBSUB=true
+PUBSUB_SUBSCRIPTION_NAME=document-processing-sub
+
+# Gemini AI Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# ChromaDB Cloud Configuration
+CHROMA_HOST=api.trychroma.com
+CHROMA_PORT=443
+CHROMA_API_KEY=your_chroma_api_key
+CHROMA_TENANT=your_tenant_id
+CHROMA_DATABASE=vector_db
+
+# Processing Configuration
+MONITORING_INTERVAL=1
+MAX_WORKERS=3
+BATCH_SIZE=10
 ```
 
-**Access Your API:**
-
-- **Main API**: <http://localhost:8000>
-- **Interactive Documentation**: <http://localhost:8000/docs>
-- **Alternative Documentation**: <http://localhost:8000/redoc>
-
-## 📡 API Endpoints
-
-### Core Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | API health check and documentation |
-| `GET` | `/docs` | Interactive Swagger UI documentation |
-| `GET` | `/redoc` | Alternative ReDoc documentation |
-
-### Pipeline Management
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/pipeline/start` | Initialize and start the processing pipeline |
-| `POST` | `/pipeline/process` | Process existing documents in GCS bucket |
-| `POST` | `/pipeline/stop` | Stop the pipeline and cleanup resources |
-| `GET` | `/pipeline/status` | Get current pipeline status and statistics |
-
-### Document Processing
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/documents/process` | Process specific document from GCS |
-| `POST` | `/search` | Semantic search across processed documents |
-| `POST` | `/search/summary` | Search Flow A summary collection |
-| `POST` | `/search/chunks` | Search Flow B chunk collection |
-| `GET` | `/analytics` | Get processing analytics and statistics |
-| `GET` | `/flows/status` | Get dual-flow processing statistics |
-
-## 🔍 Usage Examples
-
-### 1. Start the Pipeline
+### 3. Google Cloud Setup
 
 ```bash
-curl -X POST "http://localhost:8000/pipeline/start" \
-  -H "Content-Type: application/json" \
-  -d '{"bucket_name": "your-bucket-name"}'
+# Install Google Cloud SDK
+# Set up authentication
+gcloud auth login
+gcloud config set project magi-mvp-dev
+
+# Create Pub/Sub subscription (optional)
+gcloud pubsub subscriptions create document-processing-sub \
+  --topic=your-topic-name
 ```
 
-### 2. Process Documents
+### 4. Run the Server
 
 ```bash
-curl -X POST "http://localhost:8000/pipeline/process" \
-  -H "Content-Type: application/json" \
-  -d '{"bucket_name": "your-bucket-name"}'
+# Development mode (with auto-reload)
+uvicorn test:app --host 127.0.0.1 --port 8000 --reload
+
+# Production mode
+uvicorn test:app --host 0.0.0.0 --port 8000
+
+# Background process (Windows)
+Start-Process -FilePath ".venv/Scripts/python.exe" -ArgumentList "-m","uvicorn","test:app","--host","127.0.0.1","--port","8000" -NoNewWindow
 ```
 
-### 3. Search Documents
+### 5. Verify Installation
 
 ```bash
-curl -X POST "http://localhost:8000/search" \
+# Check server health
+curl http://127.0.0.1:8000/pipeline/status
+
+# View API documentation
+# Open: http://127.0.0.1:8000/docs
+```
+
+## 📖 API Documentation
+
+### Core Pipeline Endpoints
+
+#### Pipeline Management
+
+- `POST /pipeline/start` - Initialize pipeline with configuration
+- `GET /pipeline/status` - Get current pipeline status
+- `POST /pipeline/process` - Process documents with monitoring
+- `POST /pipeline/stop` - Stop pipeline gracefully
+
+#### Real-Time Monitoring
+
+- `GET /monitoring/realtime/status` - Get comprehensive monitoring status
+- `POST /monitoring/realtime/start` - Start enhanced real-time monitoring
+- `POST /monitoring/realtime/stop` - Stop real-time monitoring
+- `GET /monitoring/realtime/test` - Test real-time detection capability
+
+#### Document Processing
+
+- `POST /documents/process` - Process specific document
+- `GET /flows/status` - Get dual-flow processing statistics
+
+#### Search & Retrieval
+
+- `POST /search/summary` - Search Flow A summary collection
+- `POST /search/chunks` - Search Flow B chunks collection
+- `POST /search` - General document search
+
+#### ChromaDB Management
+
+- `GET /chromadb/collections` - View all collections and counts
+- `GET /chromadb/collection/{name}/sample` - Get sample documents
+- `GET /chromadb/search-test` - Test search functionality
+
+#### Analytics & Debug
+
+- `GET /analytics` - Processing statistics and performance metrics
+- `GET /debug/bucket-structure` - GCS bucket structure analysis
+- `GET /debug/filter-preview` - Preview folder filtering results
+- `POST /debug/test-filter` - Test custom filter settings
+
+### Request/Response Examples
+
+#### Start Pipeline
+
+```bash
+curl -X POST "http://127.0.0.1:8000/pipeline/start" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "machine learning algorithms",
-    "collection_type": "summary",
-    "top_k": 5
+    "bucket_name": "magi-mvp-dev-index-data",
+    "process_existing": true,
+    "enable_monitoring": true,
+    "enable_realtime": true,
+    "include_folders": ["inspection_docs/"],
+    "max_workers": 3,
+    "monitoring_interval": 1
   }'
 ```
 
-### 4. Check Pipeline Status
+#### Search Documents
 
 ```bash
-curl -X GET "http://localhost:8000/pipeline/status"
+# Search summaries
+curl -X POST "http://127.0.0.1:8000/search/summary" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "maintenance inspection report",
+    "top_k": 5
+  }'
+
+# Search chunks
+curl -X POST "http://127.0.0.1:8000/search/chunks" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "dimensional specifications",
+    "top_k": 3
+  }'
 ```
-
-## 🎯 API Response Examples
-
-### Pipeline Status Response
-
-```json
-{
-  "status": "running",
-  "message": "Pipeline is active and processing documents",
-  "orchestrator_active": true,
-  "monitoring_active": true,
-  "timestamp": "2025-10-09T10:30:00Z"
-}
-```
-
-### Search Response
-
-```json
-{
-  "results": [
-    {
-      "id": "doc_123",
-      "score": 0.95,
-      "title": "Machine Learning Guide",
-      "summary": "Comprehensive guide to ML algorithms...",
-      "keywords": ["machine learning", "algorithms", "AI"],
-      "metadata": {
-        "file_size": "2.5MB",
-        "processed_date": "2025-10-09"
-      }
-    }
-  ],
-  "total_results": 1,
-  "query_time": "0.23s"
-}
-```
-
-## 🛠️ Development
-
-### Project Structure
-
-```text
-Test/
-├── test.py                 # Main FastAPI application with dual-flow architecture
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables (ChromaDB Cloud config)
-├── .gitignore             # Git ignore rules
-├── README.md              # This documentation
-└── .venv/                 # Virtual environment
-```
-
-### Key Components
-
-#### 1. DualFlowProcessor
-
-- **Flow A**: Summary processing with Gemini 2.0 Flash → spaCy → ChromaDB summary_collection
-- **Flow B**: Chunk processing with header-based chunking → spaCy → ChromaDB per_doc_collection
-- **Concurrent Execution**: ThreadPoolExecutor for parallel dual-flow processing
-
-#### 2. PipelineOrchestrator
-
-- Real-time monitoring with 10-second intervals
-- Handles GCS integration and document detection
-- Coordinates dual-flow AI processing tasks
-- Production-ready monitoring and error handling
-
-#### 3. Lazy Loading System
-
-- **Models load on-demand** for sub-3-second startup
-- `get_embedding_model()` - Sentence Transformers (384-dimensional)
-- `get_nlp_model()` - spaCy NLP processor for keyword extraction
-- `get_chroma_client()` - ChromaDB Cloud client with SSL authentication
-
-#### 4. Pydantic Models
-
-- `PipelineConfigRequest` - Pipeline configuration with monitoring intervals
-- `DocumentProcessRequest` - Document processing requests
-- `SearchRequest` - Search query parameters for both flows
-
-### Supported File Types
-
-- **Documents**: PDF, DOCX, DOC, TXT, RTF, HTML, HTM, MD, CSV
-- **Images**: JPG, JPEG, PNG, BMP, TIFF, GIF
 
 ## 🔧 Configuration Options
 
-### Processing Settings
+### Processing Configuration
 
-- `MAX_WORKERS`: Concurrent processing threads (default: 3)
-- `BATCH_SIZE`: Documents per processing batch (default: 10)
-- `CHUNK_SIZE`: Text chunking size (default: 1000)
-- `CHUNK_OVERLAP`: Text chunk overlap (default: 100)
-- `MONITORING_INTERVAL`: Real-time monitoring interval (default: 10 seconds, min: 5s)
+```python
+# In test.py CONFIG class
+monitoring_interval: int = 1          # Real-time monitoring (1-300s)
+max_workers: int = 3                  # Concurrent processing threads
+batch_size: int = 10                  # Document batch size
+max_retries: int = 3                  # Gemini API retry attempts
+```
 
-### AI Models
+### Folder Filtering
 
-- **Text Extraction**: `gemini-2.0-flash-exp` (Gemini 2.5 Pro for OCR)
-- **Summarization**: `gemini-2.0-flash-exp` (Gemini 2.0 Flash for speed)
-- **Embedding Model**: `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions)
-- **NLP Processing**: spaCy `en_core_web_sm` for keyword extraction
+```python
+include_folders: Optional[List[str]] = ["inspection_docs/"]
+exclude_folders: List[str] = ["temp/", "archive/"]
+root_only: bool = False               # Process root files only
+folder_depth_limit: int = 10          # Maximum folder depth
+```
 
-### File Limits
+### AI Model Configuration
 
-- **Max File Size**: 100MB (configurable)
-- **Supported Extensions**: 15+ document and image formats
+```python
+# Gemini Models
+extraction_model = "gemini-2.5-pro"   # OCR and text extraction
+summary_model = "gemini-2.0-flash-exp" # Fast summarization
+
+# Embedding Model
+embedding_model = "all-MiniLM-L6-v2"  # Sentence transformers
+embedding_dimension = 384              # Vector dimensions
+```
+
+## 📊 Monitoring & Analytics
+
+### Real-Time Statistics
+
+The pipeline provides comprehensive monitoring through `/monitoring/realtime/status`:
+
+```json
+{
+  "status": "active",
+  "monitoring_active": true,
+  "pubsub_active": true,
+  "bucket": "magi-mvp-dev-index-data",
+  "statistics": {
+    "total_processed": 15,
+    "realtime_processed": 8,
+    "polling_processed": 7,
+    "realtime_percentage": 53.3,
+    "polling_percentage": 46.7,
+    "last_detection": "2025-10-10T15:30:45.123456",
+    "monitoring_interval_seconds": 1
+  }
+}
+```
+
+### Processing Analytics
+
+Access detailed processing metrics via `/analytics`:
+
+```json
+{
+  "analytics": {
+    "total_documents": 25,
+    "successfully_processed": 24,
+    "processing_errors": 1,
+    "success_rate": 96.0,
+    "recent_documents": ["inspection_docs/report1.pdf"],
+    "flow_statistics": {
+      "flow_a_summary_count": 24,
+      "flow_b_chunk_count": 24,
+      "flow_a_success_rate": 100.0,
+      "flow_b_success_rate": 100.0
+    }
+  }
+}
+```
+
+## � Search Capabilities
+
+### Semantic Search Features
+
+- **Multi-Collection Search**: Search across summaries or document chunks
+- **Similarity Scoring**: Cosine similarity with relevance ranking
+- **Metadata Filtering**: Search with document metadata constraints
+- **Flexible Results**: Configurable result count (1-20 documents)
+
+### Search Response Format
+
+```json
+{
+  "query": "inspection report",
+  "collection": "summary_collection",
+  "flow": "A",
+  "results": [
+    {
+      "id": "doc_id_hash",
+      "content": "Document summary content...",
+      "metadata": {
+        "filename": "inspection_docs/report.pdf",
+        "flow": "A",
+        "keywords": "inspection, maintenance, safety"
+      },
+      "similarity_score": 0.85,
+      "flow": "A - Summary"
+    }
+  ],
+  "total_results": 1
+}
+```
+
+## 🏭 Production Deployment
+
+### Docker Deployment
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+EXPOSE 8000
+
+CMD ["uvicorn", "test:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Environment Variables
+
+```bash
+# Production environment
+export ENVIRONMENT=production
+export LOG_LEVEL=INFO
+export MAX_WORKERS=5
+export MONITORING_INTERVAL=5
+export ENABLE_PUBSUB=true
+```
+
+### Health Checks
+
+```bash
+# Kubernetes health check
+curl -f http://localhost:8000/pipeline/status || exit 1
+
+# Docker health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/ || exit 1
+```
+
+## 🔒 Security Considerations
+
+### Authentication
+
+- ChromaDB API key authentication
+- Google Cloud service account credentials
+- Gemini API key management
+- Environment variable security
+
+### Network Security
+
+- HTTPS/SSL for ChromaDB Cloud connections
+- VPC network isolation for GCS access
+- API rate limiting and quota management
+- Input validation and sanitization
 
 ## 🚨 Troubleshooting
 
 ### Common Issues
 
-1. **Docs Page Loading Slowly**
-   - **Solution**: Heavy models now load lazily - first request may be slower
+#### Pub/Sub 404 Errors
 
-2. **Missing Environment Variables**
-   - **Solution**: Check `.env` file has all required ChromaDB Cloud variables
-   - Ensure `CHROMA_API_KEY`, `CHROMA_HOST`, `CHROMA_TENANT` are set
+```bash
+# Verify subscription exists
+gcloud pubsub subscriptions list
 
-3. **ChromaDB Cloud Connection Issues**
-   - **Solution**: Verify ChromaDB Cloud credentials are correct
-   - Check api.trychroma.com connectivity and SSL settings
-   - Validate tenant ID and database name
+# Check IAM permissions
+gcloud projects get-iam-policy magi-mvp-dev
+```
 
-4. **spaCy Model Not Found**
-   - **Solution**: Download required model
-   - Run: `python -m spacy download en_core_web_sm`
+#### Gemini API Rate Limits
+
+- Check API quota in Google Cloud Console
+- Verify API key validity and permissions
+- Monitor rate limiting logs for backoff behavior
+
+#### ChromaDB Connection Issues
+
+- Verify API key and tenant configuration
+- Check network connectivity to api.trychroma.com
+- Review ChromaDB Cloud dashboard for service status
+
+#### Document Processing Failures
+
+- Check GCS bucket permissions
+- Verify supported file formats (PDF, images)
+- Monitor Gemini API response times and errors
 
 ### Debug Mode
 
-Run with debug logging:
-
 ```bash
-uvicorn test:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+# Enable debug logging
+export LOG_LEVEL=DEBUG
+uvicorn test:app --log-level debug
+
+# Check processing statistics
+curl http://127.0.0.1:8000/debug/bucket-structure
+curl http://127.0.0.1:8000/debug/filter-preview
 ```
 
-## 📊 Performance
+## � Dependencies
 
-### Benchmarks
+### Core Dependencies
 
-- **Startup Time**: < 3 seconds (with lazy loading)
-- **Dual-Flow Processing**: ~3-7 seconds per document (concurrent flows)
-- **Real-Time Detection**: 10-second monitoring intervals for immediate processing
-- **Search Response Time**: < 500ms for semantic queries across both collections
-- **Concurrent Users**: Supports 100+ concurrent requests with ThreadPoolExecutor
+- **FastAPI**: Modern web framework for APIs
+- **Uvicorn**: ASGI server for FastAPI
+- **Google Cloud Storage**: Document storage and monitoring
+- **Google Cloud Pub/Sub**: Real-time notifications
+- **ChromaDB**: Vector database for embeddings
+- **Sentence Transformers**: Text embeddings
+- **spaCy**: Natural language processing
+- **Google Generative AI**: Gemini models for OCR/summarization
 
-### Scalability Features
+### Full Requirements
 
-- **Dual-Flow Architecture**: Concurrent summary and chunk processing
-- **ChromaDB Cloud**: Production-grade vector database with SSL
-- **Real-Time Monitoring**: 10-second intervals for near-instantaneous document detection
-- **Optimized Memory**: Lazy loading and efficient embedding storage
-- **Production-Ready**: uvicorn ASGI server with configurable worker pools
+See [requirements.txt](requirements.txt) for complete dependency list with versions.
 
-## 📈 Monitoring & Analytics
+## 📄 License
 
-### Built-in Analytics
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- **Dual-Flow Statistics**: Flow A (summary) vs Flow B (chunk) processing metrics
-- **Processing Analytics**: Documents processed, success rates, error tracking  
-- **Search Analytics**: Query patterns across summary and chunk collections
-- **Real-Time Monitoring**: 10-second interval processing with immediate feedback
+## �‍♂️ Support
 
-### Health Checks
+### Documentation
 
-- **ChromaDB Cloud**: Connection status, heartbeat monitoring, tenant validation
-- **AI Models**: Gemini 2.5 Pro/2.0 Flash availability and response times
-- **Pipeline Status**: Active dual-flow processing jobs and monitoring status
-- **GCS Integration**: Bucket connectivity and document detection status
+- **API Docs**: <http://127.0.0.1:8000/docs> (when server is running)
+- **Alternative Docs**: <http://127.0.0.1:8000/redoc>
 
-## 🔐 Security
+### Issues
 
-### API Security
+For technical issues, feature requests, or questions:
 
-- **CORS Support**: Configurable cross-origin resource sharing
-- **Request Validation**: Pydantic model validation for all inputs
-- **Error Handling**: Secure error responses without sensitive data exposure
+1. Check existing documentation
+2. Review troubleshooting section
+3. Create detailed issue report with logs
 
-### Data Security
+---
 
-- **Environment Variables**: Secure credential management for ChromaDB Cloud
-- **Cloud Integration**: Google Cloud IAM and ChromaDB Cloud SSL authentication
-- **Tenant Isolation**: Multi-tenant ChromaDB Cloud with secure API key access
+### Built with ❤️ for intelligent document processing
 
-## 🚀 Deployment
-
-### Development
-
-```bash
-uvicorn test:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Production
-
-```bash
-uvicorn test:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-### Docker (Optional)
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["uvicorn", "test:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+Real-time • Scalable • Production-Ready
 
 ## 🤝 Contributing
 
@@ -462,10 +508,6 @@ CMD ["uvicorn", "test:app", "--host", "0.0.0.0", "--port", "8000"]
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
