@@ -44,7 +44,7 @@ Frontend Upload → GCS Bucket → Gemini 2.0 Flash Processing → ChromaDB Clou
 
 ```bash
 git clone <repository-url>
-cd magi_ocr_poc_fastapi
+cd magi_ocr_poc_fastapi_backend
 ```
 
 ### 3. Create Virtual Environment
@@ -122,19 +122,19 @@ export GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
 ### Development Mode
 
 ```bash
-python magi_ocr_poc-fastapi_backend.py
+python magi_ocr_poc_fastapi_backend.py
 ```
 
 ### Production Mode
 
 ```bash
-uvicorn magi_ocr_poc-fastapi_backend:app --host 0.0.0.0 --port 8000
+uvicorn magi_ocr_poc_fastapi_backend:app --host 0.0.0.0 --port 8000
 ```
 
 ### With Auto-reload
 
 ```bash
-uvicorn magi_ocr_poc-fastapi_backend:app --host 0.0.0.0 --port 8000 --reload
+uvicorn magi_ocr_poc_fastapi_backend:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ## 📚 API Documentation
@@ -293,7 +293,7 @@ The system supports these file formats with automatic format detection:
 
 ```text
 magi_ocr_poc_fastapi/
-├── magi_ocr_poc-fastapi_backend.py    # Main FastAPI application (914 lines)
+├── magi_ocr_poc_fastapi_backend.py    # Main FastAPI application (914 lines)
 ├── requirements.txt                    # Python dependencies  
 ├── gcs_credentials.json               # Google Cloud service account key
 ├── .env                               # Environment configuration
