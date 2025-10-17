@@ -412,100 +412,15 @@ Check `pipeline.log` for detailed processing logs and error messages.
 
 ### Code Structure
 
-```text
-magi_ocr_poc_fastapi/
-├── magi_ocr_poc_fastapi_backend.py  # Main application code (1115 lines)
-├── requirements.txt                  # Python dependencies
-├── gcs_credentials.json             # GCS service account credentials
-├── .env                             # Environment configuration
-├── pipeline.log                      # Processing logs
-└── # MAGi OCR POC Backend
+Key modules and functions in `magi_ocr_poc_fastapi_backend.py`:
 
-A powerful FastAPI-based document processing system that leverages Google's Gemini AI for OCR, text extraction, summarization, and intelligent document chunking with vector database storage.
-
-## 🌟 Features
-
-- **Multi-Format Document Support**: Process PDFs, Word documents, images, emails, and text files
-- **AI-Powered Text Extraction**: Uses Google Gemini AI for accurate OCR and text extraction
-- **Dual Processing Flows**:
-  - **Flow A**: Document summarization with keyword extraction
-  - **Flow B**: Intelligent document chunking with structure-aware splitting
-- **Vector Database Integration**: ChromaDB for semantic search and retrieval
-- **Cloud Storage**: Google Cloud Storage (GCS) integration for file management
-- **NLP Capabilities**: spaCy and SentenceTransformers for keyword extraction and embeddings
-- **Smart Chunking**: Header-based chunking for structured documents with fallback to character-based chunking
-- **RESTful API**: Comprehensive endpoints for upload, search, and status monitoring
-
-## 📋 Supported File Types
-
-- **Documents**: `.pdf`, `.docx`, `.doc`, `.txt`, `.rtf`, `.html`, `.htm`, `.md`, `.csv`
-- **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tiff`, `.gif`
-- **Emails**: `.eml`, `.msg`, `.mbox`, `.emlx`, `.mbx`
-
-## 🏗️ Architecture
-
-### Processing Flows
-
-#### Flow A: Document Summarization
-1. Extract text from document using Gemini AI
-2. Generate comprehensive summary (200-300 words)
-3. Extract keywords using Gemini + spaCy
-4. Create embeddings using SentenceTransformers
-5. Store in `summary_collection` in ChromaDB
-
-#### Flow B: Document Chunking
-1. Extract text from document
-2. Apply intelligent chunking:
-   - Header-based chunking for structured documents (Markdown/HTML)
-   - Character-based chunking with word boundary detection
-3. Generate embeddings for all chunks (batch processing)
-4. Extract keywords from full document (optimized)
-5. Store in `per_doc_collection` in ChromaDB
-
-### Smart Chunking System
-
-The system includes an intelligent chunking mechanism that:
-- **Detects document structure**: Identifies Markdown headers (`#`, `##`, `###`) and HTML headers (`<h1>`, `<h2>`, etc.)
-- **Preserves context**: Maintains header hierarchy for better semantic understanding
-- **Respects boundaries**: Breaks at natural section breaks, sentence boundaries, or word boundaries
-- **Prevents infinite loops**: Guaranteed forward progress in chunking algorithm
-- **Configurable**: Adjustable chunk size and overlap parameters
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.13+
-- Docker (optional)
-- Google Cloud account with:
-  - Gemini API access
-  - Cloud Storage bucket
-- ChromaDB instance (hosted or local)
-
-### Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-# Google Cloud Configuration
-GOOGLE_CLOUD_PROJECT=your-project-id
-GCS_BUCKET_NAME=your-bucket-name
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_EXTRACTION_MODEL=gemini-1.5-flash
-GEMINI_SUMMARIZATION_MODEL=gemini-1.5-flash
-
-# ChromaDB Configuration
-CHROMA_HOST=your-chroma-host
-CHROMA_PORT=443
-CHROMA_API_KEY=your-chroma-api-key
-CHROMA_TENANT=default_tenant
-CHROMA_DATABASE=vector_db
-CHROMA_USE_SSL=true
-
-# Processing Configuration
-MAX_FILES_PER_UPLOAD=10
-PREFER_HEADER_CHUNKING=true
-```
+- **DocumentProcessor**: Main class orchestrating Flow A and Flow B
+- **Text Extraction**: `extract_text_with_gemini()`, `_extract_text_from_email()`
+- **Chunking**: `chunk_text()`, `chunk_text_by_headers()`, `chunk_text_smart()`
+- **Summarization**: `generate_summary_with_gemini()`
+- **Embeddings**: `embed_text()`, `embed_texts()` using SentenceTransformers
+- **Storage**: `store_summary_to_chroma()`, `store_chunks_to_chroma_batch()`
+- **API Endpoints**: FastAPI routes for upload, search, status, and health checks
 
 ### Installation
 
