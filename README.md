@@ -1,161 +1,158 @@
-# Document Processing API
+# MAGI OCR POC - FastAPI Document Processing System
 
-A simplified FastAPI-based document processing system with **dual-flow architecture** using **Gemini AI 2.0 Flash** and **ChromaDB Cloud** for intelligent document analysis and semantic search.
+A production-ready FastAPI application for intelligent document processing with AI-powered text extraction, summarization, and vector search capabilities using Google Gemini AI and ChromaDB.
 
-## 🚀 Key Features
+## 🚀 Features
 
-- **Streamlined Upload Flow**: Upload → GCS → Automatic Background Processing
-- **Dual-Flow Processing Architecture**:
-  - **Flow A**: Document summarization with Gemini AI + keyword extraction  
-  - **Flow B**: Intelligent text chunking with overlapping segments
-- **Semantic Vector Search**: Search both summaries and detailed chunks
-- **Multi-Format Support**: PDF, DOCX, images (OCR), text files, and more
-- **Background Processing**: Non-blocking document processing with FastAPI BackgroundTasks
-- **Real-time Monitoring**: Live processing statistics and collection health checks
+### Core Capabilities
 
-## 📋 System Architecture
+- **Multi-format Document Support**: Process PDFs, Word documents, images, emails, and more
+- **AI-Powered Text Extraction**: Leverage Google Gemini API for accurate OCR and text extraction
+- **Dual Processing Flows**:
+  - **Flow A**: Generate comprehensive document summaries with keywords
+  - **Flow B**: Create searchable text chunks with intelligent document structure awareness
+- **Vector Search**: Semantic search across summaries and document chunks using ChromaDB
+- **Cloud Storage Integration**: Automatic upload to Google Cloud Storage (GCS)
+- **Background Processing**: Asynchronous document processing with status tracking
 
-```text
-Frontend Upload → GCS Bucket → Gemini 2.0 Flash Processing → ChromaDB Cloud
-                                         ↓
-                               Flow A: Summary Pipeline
-                               ├─ Gemini summarization
-                               ├─ spaCy keyword extraction  
-                               ├─ Sentence-transformer embeddings
-                               └─ Store in summary_collection
-                                         ↓
-                               Flow B: Chunk Pipeline  
-                               ├─ Text chunking (1000 chars, 100 overlap)
-                               ├─ Per-chunk keyword extraction
-                               ├─ Per-chunk embeddings
-                               └─ Store in per_doc_collection
-```
+### Advanced Features
+
+- **Smart Chunking Strategies**:
+  - Header-based chunking (Markdown/HTML structure-aware)
+  - Character-based chunking with word boundary detection
+  - Automatic fallback between strategies
+- **Keyword Extraction**: Combined Gemini AI + spaCy NLP for enhanced accuracy
+- **Batch Processing**: Optimized embedding generation and ChromaDB storage
+- **Email Parsing**: Native support for EML, MSG, MBOX formats
+- **Comprehensive Logging**: Detailed processing logs with timing metrics
+
+## 📋 Supported File Types
+
+### Documents
+
+- PDF (`.pdf`)
+- Microsoft Word (`.docx`, `.doc`)
+- Text files (`.txt`, `.md`, `.rtf`)
+- HTML (`.html`, `.htm`)
+- CSV (`.csv`)
+
+### Images (OCR)
+
+- JPEG (`.jpg`, `.jpeg`)
+- PNG (`.png`)
+- BMP (`.bmp`)
+- TIFF (`.tiff`)
+- GIF (`.gif`)
+
+### Email Formats
+
+- EML (`.eml`)
+- Outlook MSG (`.msg`)
+- MBOX (`.mbox`)
+- EMLX (`.emlx`)
+- MBX (`.mbx`)
 
 ## 🛠️ Installation
 
-### 1. Prerequisites
+### Prerequisites
 
-- Python 3.8+
-- Google Cloud Project with Storage API enabled
-- Gemini AI API access
-- ChromaDB Cloud instance
+- Python 3.10+ (tested with 3.13)
+- Google Cloud Project with GCS bucket
+- Google Gemini API key
+- ChromaDB instance (cloud or self-hosted)
 
-### 2. Clone and Setup
+### Setup Instructions
+
+1. **Clone the repository**
 
 ```bash
 git clone <repository-url>
-cd magi_ocr_poc_fastapi_backend
+cd magi_ocr_poc_fastapi
 ```
 
-### 3. Create Virtual Environment
-
-```bash
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# Linux/Mac
-source .venv/bin/activate
-```
-
-### 4. Install Dependencies
+1. **Install dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Install spaCy Model
+1. **Download spaCy language model**
 
 ```bash
 python -m spacy download en_core_web_sm
 ```
 
-## ⚙️ Configuration
+1. **Configure environment variables**
 
-### Required Environment Variables
-
-Create a `.env` file with these **essential** variables:
+Create a `.env` file in the project root:
 
 ```env
-# Google Cloud & AI Services (REQUIRED)
+# Google Cloud & AI
 GOOGLE_CLOUD_PROJECT=your-project-id
-GCS_BUCKET_NAME=your-storage-bucket
+GCS_BUCKET_NAME=your-bucket-name
 GEMINI_API_KEY=your-gemini-api-key
-GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
+GEMINI_EXTRACTION_MODEL=gemini-1.5-flash
+GEMINI_SUMMARIZATION_MODEL=gemini-1.5-flash
 
-# ChromaDB Cloud (REQUIRED)  
-CHROMA_HOST=your-chroma-host.com
+# ChromaDB Configuration
+CHROMA_HOST=your-chroma-host
 CHROMA_PORT=443
 CHROMA_API_KEY=your-chroma-api-key
-CHROMA_TENANT=your-tenant-id
+CHROMA_TENANT=default_tenant
 CHROMA_DATABASE=vector_db
 CHROMA_USE_SSL=true
+
+# Processing Configuration
+MAX_FILES_PER_UPLOAD=10
+PREFER_HEADER_CHUNKING=true
 ```
 
-### Built-in Configuration
+1. **Set up GCS credentials**
 
-The application includes these **pre-configured settings**:
-
-- **AI Models**: `gemini-2.0-flash-exp` (extraction & summarization)
-- **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions)
-- **Chunking**: 1000 characters with 100 character overlap
-- **File Limit**: 100MB maximum upload size
-- **Collections**: `summary_collection` (Flow A) + `per_doc_collection` (Flow B)
-
-### Google Cloud Authentication
-
-1. Create a service account in your Google Cloud Console
-2. Download the JSON key file as `gcs_credentials.json`
-3. Set the environment variable:
+Place your `gcs_credentials.json` file in the project root and set:
 
 ```bash
-# Windows
-set GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
-
 # Linux/Mac
-export GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS="./gcs_credentials.json"
+
+# Windows PowerShell
+$env:GOOGLE_APPLICATION_CREDENTIALS=".\gcs_credentials.json"
 ```
 
-## 🚀 Running the Application
+## 🚦 Running the Application
 
 ### Development Mode
-
-```bash
-python magi_ocr_poc_fastapi_backend.py
-```
-
-### Production Mode
-
-```bash
-uvicorn magi_ocr_poc_fastapi_backend:app --host 0.0.0.0 --port 8000
-```
-
-### With Auto-reload
 
 ```bash
 uvicorn magi_ocr_poc_fastapi_backend:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## 📚 API Documentation
+### Production Mode
 
-Once running, access the interactive API documentation:
+```bash
+python magi_ocr_poc_fastapi_backend.py
+```
 
-- **Swagger UI**: <http://localhost:8000/docs>
+The API will be available at:
+
+- **API**: <http://localhost:8000>
+- **Interactive Docs**: <http://localhost:8000/docs>
 - **ReDoc**: <http://localhost:8000/redoc>
-- **API Root**: <http://localhost:8000/>
 
-## 🔗 API Endpoints
+## 📚 API Endpoints
 
-### 1. Upload Document
+### 1. Upload Documents
 
-```http
-POST /upload
-Content-Type: multipart/form-data
+**POST** `/upload`
 
-{
-  "file": <binary_file>
-}
+Upload one or multiple documents for processing.
+
+**Request:**
+
+```bash
+curl -X POST "http://localhost:8000/upload" \
+  -F "files=@document1.pdf" \
+  -F "files=@document2.docx"
 ```
 
 **Response:**
@@ -163,45 +160,99 @@ Content-Type: multipart/form-data
 ```json
 {
   "status": "success",
-  "message": "File uploaded successfully. Processing started in background.",
-  "filename": "document.pdf",
-  "gcs_path": "gs://bucket/20251014_143022_document.pdf",
-  "doc_id": "sha256hash",
-  "flow_a_processed": false,
-  "flow_b_processed": false,
-  "chunks_created": 0
+  "message": "Successfully started processing for 2 files.",
+  "processed_files": [
+    {
+      "filename": "document1.pdf",
+      "gcs_path": "gs://your-bucket/20251017_120000_document1.pdf",
+      "doc_id": "abc123..."
+    }
+  ]
 }
 ```
 
 ### 2. Search Summaries (Flow A)
 
-```http
-POST /search/summary
-Content-Type: application/json
+**POST** `/search/summary`
 
+Search across document summaries.
+
+**Request:**
+
+```json
 {
   "query": "machine learning algorithms",
   "top_k": 5
 }
 ```
 
+**Response:**
+
+```json
+{
+  "query": "machine learning algorithms",
+  "collection": "summary_collection",
+  "results": [
+    {
+      "id": "abc123...",
+      "content": "This document discusses various ML algorithms...",
+      "metadata": {
+        "filename": "ml_guide.pdf",
+        "flow": "A"
+      },
+      "similarity_score": 0.892,
+      "flow": "A - Summary"
+    }
+  ],
+  "total_results": 5
+}
+```
+
 ### 3. Search Chunks (Flow B)
 
-```http
-POST /search/chunks
-Content-Type: application/json
+**POST** `/search/chunks`
 
+Search across document chunks for precise content retrieval.
+
+**Request:**
+
+```json
 {
-  "query": "data preprocessing techniques",
+  "query": "neural network architecture",
   "top_k": 10
 }
 ```
 
-### 4. Get Status
+**Response:**
 
-```http
-GET /status
+```json
+{
+  "query": "neural network architecture",
+  "collection": "per_doc_collection",
+  "results": [
+    {
+      "id": "abc123_chunk_5",
+      "content": "Neural network architectures consist of...",
+      "metadata": {
+        "filename": "ml_guide.pdf",
+        "chunk_index": 5,
+        "parent_doc_id": "abc123...",
+        "flow": "B",
+        "chunk_length": 987
+      },
+      "similarity_score": 0.915,
+      "flow": "B - Chunks"
+    }
+  ],
+  "total_results": 10
+}
 ```
+
+### 4. System Status
+
+**GET** `/status`
+
+Get system health and processing statistics.
 
 **Response:**
 
@@ -209,224 +260,238 @@ GET /status
 {
   "status": "active",
   "processing_stats": {
-    "total_processed": 25,
+    "total_processed": 42,
     "total_failed": 2,
-    "success_rate": 92.6
+    "success_rate": 95.5
   },
   "collections": {
     "summary_collection": {
       "name": "Flow A - Document Summaries",
-      "count": 25
+      "count": 42
     },
     "per_doc_collection": {
       "name": "Flow B - Document Chunks",
-      "count": 150
+      "count": 538
     }
+  },
+  "capabilities": {
+    "gemini_available": true,
+    "gcs_available": true,
+    "chromadb_available": true,
+    "nlp_available": true
   }
 }
 ```
 
-## 📁 Supported File Types
+### 5. ChromaDB Connection Test
 
-The system supports these file formats with automatic format detection:
+**GET** `/conection/chromadb`
 
-- **Documents**: `.pdf`, `.docx`, `.doc`, `.txt`, `.rtf`, `.html`, `.htm`, `.md`
-- **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tiff`, `.gif` (Gemini Vision OCR)
-- **Data**: `.csv`
+Test ChromaDB connection and configuration.
 
-**Limits**: 100MB maximum file size (configurable via `CONFIG.max_file_size_mb`)
+## 🔧 Configuration Options
 
-## 🔄 Complete Processing Workflow
+### Environment Variables
 
-### Phase 1: Upload & Storage
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEMINI_API_KEY` | Google Gemini API key | Required |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID | Required |
+| `GCS_BUCKET_NAME` | GCS bucket name | Required |
+| `CHROMA_HOST` | ChromaDB host | Required |
+| `CHROMA_PORT` | ChromaDB port | `443` |
+| `CHROMA_API_KEY` | ChromaDB API key | Required |
+| `CHROMA_TENANT` | ChromaDB tenant | `default_tenant` |
+| `CHROMA_DATABASE` | ChromaDB database | `vector_db` |
+| `CHROMA_USE_SSL` | Use SSL for ChromaDB | `true` |
+| `GEMINI_EXTRACTION_MODEL` | Model for text extraction | `gemini-1.5-flash` |
+| `GEMINI_SUMMARIZATION_MODEL` | Model for summarization | `gemini-1.5-flash` |
+| `MAX_FILES_PER_UPLOAD` | Max files per upload | `10` |
+| `PREFER_HEADER_CHUNKING` | Use header-based chunking | `true` |
 
-1. **Upload Request**: Document sent to `/upload` endpoint
-2. **Validation**: File type and size validation
-3. **GCS Upload**: File stored with timestamp: `YYYYMMDD_HHMMSS_filename.ext`
-4. **Background Task**: Processing starts asynchronously via `BackgroundTasks`
+### Processing Limits
 
-### Phase 2: Text Extraction
+- **Max file size**: 100 MB per file
+- **Chunk size**: 1000 characters (configurable)
+- **Chunk overlap**: 100 characters (configurable)
+- **Max keywords**: 15 per document
 
-1. **Gemini Vision**: `gemini-2.0-flash-exp` extracts text from any format
-2. **Text Cleaning**: Normalize whitespace and remove special characters
+## 🏗️ Architecture
 
-### Phase 3: Dual-Flow Processing
+### Processing Flows
 
-1. **Flow A - Summary Pipeline**:
-   - Gemini generates 200-300 word summary
-   - Gemini extracts 10-15 keywords
-   - spaCy NLP extracts additional keywords (entities, noun phrases)
-   - `sentence-transformers` creates 384-dim embeddings
-   - Store in ChromaDB `summary_collection`
+#### Flow A: Summary Processing
 
-2. **Flow B - Chunk Pipeline**:
-   - Split text into 1000-char chunks (100-char overlap)
-   - Extract keywords per chunk with spaCy
-   - Generate embeddings per chunk
-   - Store in ChromaDB `per_doc_collection`
+1. Extract text from document using Gemini AI
+2. Clean and normalize text
+3. Generate comprehensive summary (200-300 words)
+4. Extract keywords using Gemini + spaCy
+5. Generate embeddings using Sentence Transformers
+6. Store in `summary_collection` in ChromaDB
 
-### Phase 4: Search Ready
+#### Flow B: Chunk Processing
 
-1. **Instant Access**: Documents searchable via semantic similarity in both collections
+1. Extract and clean text
+2. **Smart Chunking**:
+   - Detect document structure (Markdown/HTML headers)
+   - Apply header-based chunking if structure found
+   - Fallback to character-based chunking
+3. Generate embeddings for all chunks in batches
+4. Extract keywords from full document (optimization)
+5. Store chunks with metadata in `per_doc_collection`
 
-## 🔍 Advanced Search Capabilities
+### Technology Stack
 
-### Semantic Vector Search
+- **Web Framework**: FastAPI 0.110.0
+- **AI Models**: Google Gemini 1.5 Flash
+- **Embeddings**: Sentence Transformers (all-MiniLM-L6-v2)
+- **NLP**: spaCy (en_core_web_sm)
+- **Vector Database**: ChromaDB 1.1.1
+- **Cloud Storage**: Google Cloud Storage
+- **Server**: Uvicorn (ASGI)
 
-- **Embeddings Model**: `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions)
-- **Similarity Algorithm**: Cosine similarity with `1 - distance` scoring
-- **Dual Collection Architecture**: Independent search across summary vs. chunk collections
-- **Enhanced Keywords**: Combined Gemini AI + spaCy NLP keyword extraction
+## 📊 Performance Optimizations
 
-### Search Modes
+### Implemented Optimizations
 
-- **Summary Search** (`/search/summary`): High-level document concepts, themes, and overviews
-- **Chunk Search** (`/search/chunks`): Granular content search within specific document sections
-- **Configurable Results**: 1-20 results per query (default: 5)
+1. **Batch Embedding Generation**: Process 32 chunks at a time
+2. **Batch ChromaDB Storage**: Store 50 documents per batch
+3. **Global Keyword Extraction**: Extract once per document, reuse for all chunks
+4. **Async Background Processing**: Non-blocking document processing
+5. **Smart Chunking**: Preserve document structure for better context
+6. **Progress Logging**: Detailed timing metrics for performance monitoring
 
-### ChromaDB Collections
+### Typical Processing Times
 
-- **`summary_collection`**: Stores document summaries with metadata
-- **`per_doc_collection`**: Stores text chunks with parent document tracking
-
-## 🗂️ Project Structure
-
-```text
-magi_ocr_poc_fastapi/
-├── magi_ocr_poc_fastapi_backend.py    # Main FastAPI application (914 lines)
-├── requirements.txt                    # Python dependencies  
-├── gcs_credentials.json               # Google Cloud service account key
-├── .env                               # Environment configuration
-├── .env.template                      # Environment template (no secrets)
-├── pipeline.log                       # Application logs
-├── README.md                          # Documentation
-└── __pycache__/                       # Python cache files
-```
-
-### Code Architecture
-
-- **Lazy Initialization**: Dependencies loaded on-demand via `get_*_client()` functions
-- **Background Processing**: Uses FastAPI `BackgroundTasks` for non-blocking processing
-- **DocumentProcessor Class**: Handles dual-flow processing logic
-- **ChromaDB Collections**: Two separate collections for different search granularities
-- **Error Handling**: Comprehensive logging and HTTP exception handling
-
-## 🛡️ Security Considerations
-
-- **Environment Variables**: Never commit `.env` or credentials to version control
-- **API Keys**: Rotate API keys regularly
-- **CORS**: Configure appropriate CORS settings for production
-- **File Validation**: Built-in file type and size validation
-- **Input Sanitization**: Text cleaning and validation
-
-## 📊 Monitoring & Health Checks
-
-### Logging System
-
-- **File Logging**: `pipeline.log` with timestamp, level, and detailed messages
-- **Console Output**: Real-time logs via `StreamHandler`
-- **Log Levels**: INFO level for normal operations, ERROR for failures
-
-### Status Endpoint (`/status`)
-
-Real-time system information including:
-
-- **Processing Statistics**: Success/failure counts and success rate
-- **Collection Health**: Document counts in both ChromaDB collections
-- **Dependency Status**: Availability of Gemini, GCS, ChromaDB, spaCy, sentence-transformers
-- **Configuration Info**: Bucket name, file size limits, supported extensions
-
-### Built-in Health Monitoring
-
-- **Environment Validation**: `validate_environment()` checks required variables and dependencies
-- **Lazy Connection**: Clients initialize on first use with error handling
-- **ChromaDB Heartbeat**: Connection verification during startup
+- **Text Extraction (PDF)**: 30-60 seconds via Gemini API
+- **Summarization**: 5-10 seconds per document
+- **Embedding Generation**: ~2-5 seconds per 100 chunks
+- **ChromaDB Storage**: ~1-3 seconds per 100 chunks
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Import Errors**: Ensure all dependencies installed
+#### 1. spaCy Model Not Found
 
-   ```bash
-   pip install -r requirements.txt
-   python -m spacy download en_core_web_sm
-   ```
-
-2. **Authentication Errors**: Check `GOOGLE_APPLICATION_CREDENTIALS`
-
-   ```bash
-   echo $GOOGLE_APPLICATION_CREDENTIALS  # Should point to gcs_credentials.json
-   ```
-
-3. **Environment Variables**: Verify `.env` file configuration
-
-   ```bash
-   python -c "from dotenv import load_dotenv; load_dotenv(); import os; print(os.getenv('GEMINI_API_KEY'))"
-   ```
-
-4. **ChromaDB Connection**: Check ChromaDB Cloud credentials and network access
-
-### Debug Mode
-
-Enable debug logging by modifying the logging level:
-
-```python
-logging.basicConfig(level=logging.DEBUG)
+```bash
+# Solution: Download the model
+python -m spacy download en_core_web_sm
 ```
 
+#### 2. GCS Authentication Error
+
+```bash
+# Ensure credentials file exists and environment variable is set
+export GOOGLE_APPLICATION_CREDENTIALS="./gcs_credentials.json"
+```
+
+#### 3. ChromaDB Connection Failed
+
+- Verify `CHROMA_HOST`, `CHROMA_PORT`, and `CHROMA_API_KEY`
+- Check SSL settings (`CHROMA_USE_SSL`)
+- Test with `/conection/chromadb` endpoint
+
+#### 4. Gemini API Rate Limits
+
+- Use `gemini-1.5-flash` for faster processing
+- Implement retry logic for production deployments
+- Monitor API usage in Google Cloud Console
+
+### Logs
+
+Check `pipeline.log` for detailed processing logs and error messages.
+
+## 📝 Development Notes
+
+### Dependencies
+
+- Requires Python 3.10+ (tested with 3.13)
+- Uses Python 3.13-compatible versions of SciPy and PyTorch
+- All dependencies specified in `requirements.txt`
+
+### Code Structure
+
+```text
+magi_ocr_poc_fastapi/
+├── magi_ocr_poc_fastapi_backend.py  # Main application code (1115 lines)
+├── requirements.txt                  # Python dependencies
+├── gcs_credentials.json             # GCS service account credentials
+├── .env                             # Environment configuration
+├── pipeline.log                      # Processing logs
+└── README.md                        # This file
+```
+
+### Key Components
+
+#### Document Processing (`DocumentProcessor` class)
+
+- Validates file types and sizes
+- Orchestrates Flow A and Flow B processing
+- Tracks processing statistics
+
+#### Text Extraction Functions
+
+- `extract_text_with_gemini()`: AI-powered text extraction
+- `_extract_text_from_email()`: Email format parsing
+
+#### Chunking Strategies
+
+- `chunk_text()`: Character-based chunking with word boundaries
+- `chunk_text_by_headers()`: Structure-aware chunking
+- `chunk_text_smart()`: Automatic strategy selection
+
+#### Keyword Extraction
+
+- `generate_summary_with_gemini()`: AI-powered summarization + keywords
+- `extract_keywords_with_spacy()`: NLP-based keyword extraction
+
+#### Vector Operations
+
+- `embed_text()` / `embed_texts()`: Generate embeddings
+- `store_summary_to_chroma()`: Store summaries
+- `store_chunks_to_chroma_batch()`: Batch store chunks
+
+### Testing
+
+```bash
+# Run with auto-reload for development
+uvicorn magi_ocr_poc_fastapi_backend:app --reload
+
+# Access interactive API documentation
+# http://localhost:8000/docs
+```
+
+## 🔐 Security Considerations
+
+- Store API keys and credentials in `.env` file (never commit to git)
+- Use environment variables for sensitive configuration
+- Implement rate limiting for production deployments
+- Validate file types and sizes before processing
+- Use HTTPS/SSL for ChromaDB connections in production
+- Add `.env` and `gcs_credentials.json` to `.gitignore`
+
+## 📄 License
+
+[Your License Here]
+
 ## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
-5. Submit a pull request
+4. Submit a pull request
 
-## 📄 License
+## 📞 Support
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+For issues and questions:
 
-## 🏗️ Technical Stack
-
-### Core Technologies
-
-- **FastAPI 0.104+**: Modern async web framework with automatic API documentation
-- **Google Gemini 2.0 Flash**: Advanced AI for text extraction, OCR, and summarization
-- **ChromaDB Cloud**: Vector database with HTTP client for embeddings storage
-- **sentence-transformers**: `all-MiniLM-L6-v2` model for semantic embeddings
-- **spaCy**: `en_core_web_sm` model for NLP and keyword extraction
-- **Google Cloud Storage**: Scalable document storage with timestamps
-
-### Python Dependencies
-
-Key packages from `requirements.txt`:
-
-- `fastapi` - Web framework
-- `google-generativeai` - Gemini AI client
-- `google-cloud-storage` - GCS integration  
-- `chromadb` - Vector database client
-- `sentence-transformers` - Embedding generation
-- `spacy` - Natural language processing
-- `numpy` - Numerical operations
-- `python-dotenv` - Environment variable management
-
-## 📞 Support & Troubleshooting
-
-### Quick Diagnostics
-
-1. **Check Application Logs**: View `pipeline.log` for detailed error messages
-2. **Verify Environment**: Ensure all variables in `.env` are correctly set
-3. **Test System Health**: Use `/status` endpoint to check component availability
-4. **Validate Dependencies**: Run environment validation on startup
-
-### Performance Notes
-
-- **Background Processing**: Document processing runs asynchronously to avoid blocking uploads
-- **Lazy Loading**: AI models and clients initialize on first use to reduce startup time  
-- **Chunking Strategy**: 1000-character chunks with 100-character overlap for optimal search granularity
-- **Memory Management**: Uses temporary files for Gemini processing with automatic cleanup
+- Check `pipeline.log` for detailed error messages
+- Review the `/status` endpoint for system health
+- Consult the interactive API docs at `/docs`
 
 ---
 
-**Document Processing API v2.0.0** - Simplified FastAPI implementation focusing on core upload → process → search workflow
+**Built with FastAPI, Google Gemini AI, and ChromaDB** 🚀
