@@ -1,4 +1,4 @@
-# MAGI RAG POC FastAPI
+# MAGI LlamaIndex RAG POC FastAPI
 
 A Retrieval-Augmented Generation (RAG) system built with FastAPI, LlamaIndex, and Google Gemini AI. This system allows you to upload documents, automatically process them, and query for information using natural language.
 
@@ -269,11 +269,3 @@ Once the server is running, visit `http://127.0.0.1:8000/docs` for interactive A
 ### Logs
 
 Check the console output for detailed error messages and processing information.
-
-## License
-
-[Add your license information here]
-
-## Contributing
-
-[Add contribution guidelines here]
