@@ -1,172 +1,279 @@
-# Installing pgvector on PostgreSQL 18.0 (Windows)
+# MAGI RAG POC FastAPI
 
-## Your PostgreSQL Information
-- **Version**: PostgreSQL 18.0 (x86_64-windows)
-- **Installation Path**: `C:\Program Files\PostgreSQL\18\`
-- **Data Directory**: `C:\Program Files\PostgreSQL\18\data`
+A Retrieval-Augmented Generation (RAG) system built with FastAPI, LlamaIndex, and Google Gemini AI. This system allows you to upload documents, automatically process them, and query for information using natural language.
 
----
+## Features
 
-## Installation Steps
+- **Document Upload & Processing**: Upload various file types (PDF, DOCX, images, emails, etc.) to Google Cloud Storage
+- **Automatic Text Extraction**: Uses Google Gemini AI to extract text from multiple file formats
+- **Structured Data Extraction**: Automatically extracts metadata like title, author, summary, key points, and entities
+- **Vector Storage**: Stores document embeddings in PostgreSQL with pgvector for efficient similarity search
+- **Natural Language Querying**: Query the system using natural language to get relevant answers
+- **RESTful API**: Clean FastAPI-based REST API for easy integration
+- **Multiple Index Support**: Support for multiple document indexes/namespaces
 
-### Method 1: Pre-built Binaries (RECOMMENDED - Easiest)
+## Supported File Types
 
-#### Step 1: Download pgvector
-1. Go to: https://github.com/pgvector/pgvector/releases
-2. Download the **Windows binaries** for your PostgreSQL version (look for `pgvector-v0.7.4-windows-x64.zip` or latest)
-   - Note: If exact version isn't available, download the closest version
+- PDF documents
+- Microsoft Word documents (.docx, .doc)
+- Text files (.txt)
+- Rich Text Format (.rtf)
+- HTML files
+- Markdown files
+- CSV files
+- Images (JPEG, PNG, GIF, BMP, TIFF)
+- Email files (.eml, .msg, .mbox)
 
-#### Step 2: Extract Files
-Extract the downloaded ZIP file to a temporary location (e.g., `C:\Temp\pgvector`)
+## Prerequisites
 
-#### Step 3: Copy Files to PostgreSQL Directory
-You need **Administrator privileges** for this step.
+- Python 3.8+
+- Google Cloud Platform account with:
+  - Google Cloud Storage bucket
+  - Service account with appropriate permissions
+  - Google AI API key (for Gemini)
+- PostgreSQL database with pgvector extension
+- Google Cloud credentials JSON file
 
-Open PowerShell **as Administrator** and run:
+## Installation
 
-```powershell
-# Navigate to the extracted pgvector folder
-cd C:\Temp\pgvector
+1. Clone the repository:
 
-# Copy vector.dll to lib directory
-Copy-Item -Path "vector.dll" -Destination "C:\Program Files\PostgreSQL\18\lib\" -Force
+   ```bash
+   git clone <repository-url>
+   cd magi_rag_poc_fastapi
+   ```
 
-# Copy extension control file
-Copy-Item -Path "vector.control" -Destination "C:\Program Files\PostgreSQL\18\share\extension\" -Force
+2. Install dependencies:
 
-# Copy all SQL files
-Copy-Item -Path "vector--*.sql" -Destination "C:\Program Files\PostgreSQL\18\share\extension\" -Force
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Set up environment variables by creating a `.env` file:
+
+   ```env
+   # Google Cloud Configuration
+   GOOGLE_API_KEY=your_google_ai_api_key
+   GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
+   GCS_BUCKET_NAME=your_gcs_bucket_name
+
+   # Database Configuration
+   DB_HOST=your_postgres_host
+   DB_PORT=5432
+   DB_NAME=your_database_name
+   DB_USER=your_database_user
+   DB_PASSWORD=your_database_password
+
+   # Application Configuration
+   APP_HOST=0.0.0.0
+   APP_PORT=8000
+   VECTOR_DIMENSION=768
+   SIMILARITY_TOP_K=5
+   ```
+
+4. Place your Google Cloud service account credentials in `gcs_credentials.json`
+
+5. Ensure your PostgreSQL database has the pgvector extension enabled:
+
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+
+## Usage
+
+### Starting the Server
+
+Run the FastAPI server:
+
+```bash
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-**Manual Alternative:**
-1. Open File Explorer **as Administrator** (right-click -> Run as administrator)
-2. Navigate to extracted pgvector folder
-3. Copy `vector.dll` to: `C:\Program Files\PostgreSQL\18\lib\`
-4. Copy `vector.control` to: `C:\Program Files\PostgreSQL\18\share\extension\`
-5. Copy all `vector--*.sql` files to: `C:\Program Files\PostgreSQL\18\share\extension\`
+Or run directly:
 
-#### Step 4: Restart PostgreSQL Service
-
-**Option A - Using Services GUI:**
-1. Press `Win + R`, type `services.msc`, press Enter
-2. Find "postgresql-x64-18" service
-3. Right-click → **Restart**
-
-**Option B - Using PowerShell (as Administrator):**
-```powershell
-Restart-Service -Name "postgresql-x64-18"
+```bash
+python app.py
 ```
 
-#### Step 5: Verify Installation
-Run the setup script again:
-```powershell
-.venv\Scripts\python.exe setup_pgvector.py
+The API will be available at `http://127.0.0.1:8000`
+
+### API Endpoints
+
+#### Upload Files
+
+```http
+POST /upload
 ```
 
-If successful, you should see:
-```
-✓ Created pgvector extension
-✓ Created table 'data_rag_vectors'
-✓ Created vector index 'rag_vectors_idx'
-```
+Upload files to be processed and ingested into the RAG system.
 
----
+**Parameters:**
 
-### Method 2: Build from Source (Advanced)
+- `files`: List of files to upload (multipart/form-data)
+- `index_name`: Name of the index to store documents in (default: "default")
 
-**Requirements:**
-- Visual Studio 2022 (Community Edition is free)
-- Visual Studio C++ Build Tools
+**Example using curl:**
 
-#### Step 1: Install Visual Studio
-1. Download from: https://visualstudio.microsoft.com/downloads/
-2. Install with "Desktop development with C++" workload
-
-#### Step 2: Clone pgvector
-```powershell
-git clone https://github.com/pgvector/pgvector.git
-cd pgvector
-git checkout v0.7.4  # or latest stable version
+```bash
+curl -X POST "http://127.0.0.1:8000/upload" \
+     -F "files=@document.pdf" \
+     -F "files=@document.docx" \
+     -F "index_name=my_index"
 ```
 
-#### Step 3: Build
-Open **Developer Command Prompt for VS 2022** and run:
-```cmd
-set PGROOT=C:\Program Files\PostgreSQL\18
-nmake /F Makefile.win
-nmake /F Makefile.win install
+**Response:**
+
+```json
+{
+  "message": "Successfully uploaded and ingested 2 files",
+  "uploaded_files": ["uuid1_document.pdf", "uuid2_document.docx"],
+  "document_ids": ["doc-id-1", "doc-id-2"],
+  "ingest_result": "Successfully ingested 2 files"
+}
 ```
 
-#### Step 4: Restart PostgreSQL (see Method 1, Step 4)
+#### Query the RAG System
 
----
+```http
+POST /query
+```
+
+Query the system for information based on ingested documents.
+
+**Request Body:**
+
+```json
+{
+  "query": "What are the main points discussed in the documents?",
+  "index_name": "default",
+  "top_k": 5
+}
+```
+
+**Example using curl:**
+
+```bash
+curl -X POST "http://127.0.0.1:8000/query" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "query": "Summarize the key findings",
+       "index_name": "default",
+       "top_k": 3
+     }'
+```
+
+**Response:**
+
+```json
+{
+  "answer": "Based on the documents, the key findings include..."
+}
+```
+
+#### Health Check
+
+```http
+GET /
+```
+
+Returns a simple health check response.
+
+## Architecture
+
+### Components
+
+1. **FastAPI Application** (`app.py`): REST API endpoints for file upload and querying
+2. **RAG Engine** (`main.py`): Core RAG functionality including:
+   - Document processing and text extraction
+   - Structured data extraction using Gemini AI
+   - Vector embeddings generation
+   - Query processing and response generation
+3. **Data Models** (`models.py`): Pydantic models for API requests/responses and document metadata
+4. **Google Cloud Storage**: File storage for uploaded documents
+5. **PostgreSQL + pgvector**: Vector database for document embeddings
+6. **Google Gemini AI**: LLM for text extraction, structured data parsing, and query responses
+
+### Data Flow
+
+1. **Upload**: Files are uploaded via API → stored in GCS → processed for text extraction → structured data extracted → embeddings generated → stored in vector database
+2. **Query**: Natural language query → converted to embedding → similarity search in vector database → relevant documents retrieved → LLM generates response
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GOOGLE_API_KEY` | Google AI API key for Gemini | Required |
+| `GCS_BUCKET_NAME` | Google Cloud Storage bucket name | Required |
+| `DB_HOST` | PostgreSQL host | Required |
+| `DB_PORT` | PostgreSQL port | 5432 |
+| `DB_NAME` | PostgreSQL database name | Required |
+| `DB_USER` | PostgreSQL username | Required |
+| `DB_PASSWORD` | PostgreSQL password | Required |
+| `APP_HOST` | FastAPI host | 0.0.0.0 |
+| `APP_PORT` | FastAPI port | 8000 |
+| `VECTOR_DIMENSION` | Embedding vector dimension | 768 |
+| `SIMILARITY_TOP_K` | Number of similar documents to retrieve | 5 |
+
+## Development
+
+### Project Structure
+
+```text
+.
+├── app.py              # FastAPI application and endpoints
+├── main.py             # Core RAG functionality
+├── models.py           # Data models and schemas
+├── requirements.txt    # Python dependencies
+├── gcs_credentials.json # Google Cloud credentials (not in repo)
+└── README.md          # This file
+```
+
+### Running Tests
+
+```bash
+# Install test dependencies if any
+pip install pytest
+
+# Run tests
+pytest
+```
+
+## API Documentation
+
+Once the server is running, visit `http://127.0.0.1:8000/docs` for interactive API documentation powered by Swagger UI.
 
 ## Troubleshooting
 
-### Issue: "Access Denied" when copying files
-**Solution**: Run PowerShell or File Explorer as Administrator
+### Common Issues
 
-### Issue: "Service not found: postgresql-x64-18"
-**Solution**: Check actual service name:
-```powershell
-Get-Service -Name "*postgres*"
-```
+1. **Google Cloud Authentication Errors**
+   - Ensure `gcs_credentials.json` is present and contains valid service account credentials
+   - Verify the service account has appropriate permissions for GCS and AI APIs
 
-### Issue: Extension still not available after installation
-**Solution**: 
-1. Verify files are in correct locations:
-   ```powershell
-   Test-Path "C:\Program Files\PostgreSQL\18\lib\vector.dll"
-   Test-Path "C:\Program Files\PostgreSQL\18\share\extension\vector.control"
-   ```
-2. Check PostgreSQL logs: `C:\Program Files\PostgreSQL\18\data\log\`
-3. Ensure PostgreSQL service restarted successfully
+2. **Database Connection Issues**
+   - Ensure PostgreSQL is running and accessible
+   - Verify pgvector extension is installed: `CREATE EXTENSION IF NOT EXISTS vector;`
+   - Check database credentials in `.env` file
 
-### Issue: DLL compatibility error
-**Solution**: 
-- Ensure downloaded binary matches PostgreSQL version (18.x)
-- Check if binary is 64-bit (matches your PostgreSQL installation)
+3. **File Processing Errors**
+   - Verify uploaded files are in supported formats
+   - Check file size limits and API quotas for Gemini
 
----
+4. **Query Returns No Results**
+   - Ensure documents have been successfully ingested
+   - Check that the correct `index_name` is being used
+   - Verify vector database contains data
 
-## Quick Verification Commands
+### Logs
 
-After installation, connect to your database and run:
+Check the console output for detailed error messages and processing information.
 
-```sql
--- Create extension
-CREATE EXTENSION IF NOT EXISTS vector;
+## License
 
--- Verify installation
-SELECT * FROM pg_extension WHERE extname = 'vector';
+[Add your license information here]
 
--- Test vector operations
-SELECT '[1,2,3]'::vector;
-```
+## Contributing
 
----
-
-## Next Steps
-
-Once pgvector is installed:
-
-1. Run setup script:
-   ```powershell
-   .venv\Scripts\python.exe setup_pgvector.py
-   ```
-
-2. Test document upload via Postman:
-   - POST http://localhost:8000/upload/
-   - Upload a PDF file
-
-3. Query your documents:
-   - POST http://localhost:8000/query/
-   - Body: `{"query": "your question here"}`
-
----
-
-## Support Links
-
-- pgvector GitHub: https://github.com/pgvector/pgvector
-- pgvector Releases: https://github.com/pgvector/pgvector/releases
-- PostgreSQL Windows Download: https://www.postgresql.org/download/windows/
+[Add contribution guidelines here]
