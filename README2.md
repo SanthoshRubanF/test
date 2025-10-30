@@ -1,523 +1,429 @@
-# 🚀 MAGi OCR Real-Time Document Processing Pipeline
+# MAGI POC RAG OCR Processing
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/)
-[![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cloud.google.com/)
-[![AI](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlebard&logoColor=white)](https://ai.google.dev/)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B6B?style=for-the-badge)](https://www.trychroma.com/)
+A Retrieval-Augmented Generation (RAG) system built with FastAPI, LlamaIndex, and Google Gemini 2.5 Flash AI. This system allows you to upload documents, automatically process them, and query for information using natural language.
 
-A **production-ready, real-time document processing pipeline** built with FastAPI that combines **Google Cloud Storage**, **Pub/Sub**, **Gemini AI**, **ChromaDB Cloud**, and advanced NLP for intelligent document ingestion with dual-flow architecture and **1-second real-time monitoring**.
+## Features
 
-## ✨ Key Features
+- **Document Upload & Processing**: Upload various file types (PDF, DOCX, images, emails, etc.) to Google Cloud Storage
+- **Automatic Text Extraction**: Uses Google Gemini 2.5 Flash AI to extract text from multiple file formats
+- **Structured Data Extraction**: Automatically extracts metadata including title, author, summary, key points, entities, categories, language, and word count
+- **Vector Storage**: Stores document embeddings (using Gemini text-embedding-004) in PostgreSQL with pgvector for efficient similarity search
+- **Natural Language Querying**: Query the system using natural language to get relevant answers
+- **RESTful API**: Clean FastAPI-based REST API for easy integration
+- **Multiple Index Support**: Support for multiple document indexes/namespaces
+- **Background Processing**: Asynchronous document ingestion for better performance
+- **Query Caching**: In-memory caching for improved response times
+- **Comprehensive File Support**: Handles 20+ file formats including documents, images, and emails
 
-### 🔀 **Dual-Flow Architecture**
+## Supported File Types
 
-- **Flow A (Summary Processing)**: Document → Gemini 2.5 Pro OCR → Gemini 2.0 Flash Summarization → ChromaDB Summary Collection
-- **Flow B (Chunk Processing)**: Document → Gemini 2.5 Pro OCR → Header-Based Chunking → ChromaDB Per-Doc Collection
-- **Concurrent Processing**: Both flows execute simultaneously with ThreadPoolExecutor optimization
+- **Documents**: PDF, DOCX, DOC, TXT, RTF, HTML, HTM, MD
+- **Data Files**: CSV
+- **Images**: JPEG, JPG, PNG, GIF, BMP, TIFF
+- **Email**: EML, MSG, MBOX, EMLX, MBX
+- **Archives**: ZIP (with document contents)
 
-### ⚡ **Real-Time Monitoring**
+## Prerequisites
 
-- **1-Second Polling**: Near-instantaneous document detection
-- **Pub/Sub Integration**: Google Cloud Pub/Sub for instant notifications
-- **Dual Detection**: Polling + Pub/Sub fallback for maximum reliability
-- **Live Statistics**: Real-time processing metrics and performance tracking
+- **Python 3.8+**
+- **Google Cloud Platform account** with:
+  - Google Cloud Storage bucket
+  - Service account with appropriate permissions
+  - Google AI API key (for Gemini)
+- **PostgreSQL database** with pgvector extension enabled
+- **Google Cloud credentials JSON file**
 
-### 🤖 **Advanced AI Processing**
+## Installation
 
-- **Gemini 2.5 Pro**: State-of-the-art OCR and text extraction from PDFs, images
-- **Gemini 2.0 Flash**: High-speed AI summarization with rate limiting
-- **spaCy NLP**: Intelligent keyword extraction and text analysis
-- **Sentence Transformers**: 384-dimensional embeddings for semantic search
+1. **Clone the repository:**
 
-### 🔍 **Semantic Search & Storage**
+   ```bash
+   git clone <repository-url>
+   cd magi-poc-rag-ocr-processing
+   ```
 
-- **ChromaDB Cloud**: Production-grade vector database with cloud hosting
-- **Dual Collections**: Separate storage for summaries (`summary_collection`) and chunks (`per_doc_collection`)
-- **Vector Search**: Cosine similarity-based semantic retrieval
-- **Metadata Enrichment**: Full document metadata, keywords, and processing statistics
+2. **Create virtual environment:**
 
-### 📊 **Enterprise Features**
+   ```bash
+   python -m venv .venv
+   # On Windows:
+   .venv\Scripts\activate
+   # On macOS/Linux:
+   source .venv/bin/activate
+   ```
 
-- **RESTful API**: 15+ endpoints for complete pipeline control
-- **Real-Time Analytics**: Processing statistics, success rates, error tracking
-- **Folder Filtering**: Advanced GCS path filtering with include/exclude patterns
-- **Scalable Processing**: Configurable worker pools and batch sizes
-- **Health Monitoring**: Comprehensive system status and diagnostics
+3. **Install dependencies:**
 
-## 🏗️ Architecture Overview
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```mermaid
-graph TB
-    A[GCS Bucket: magi-mvp-dev-index-data] --> B[Real-Time Orchestrator]
-    B --> C[Pub/Sub Listener]
-    B --> D[1s Polling Monitor]
-    
-    B --> E[Dual-Flow Processor]
-    E --> F[Flow A: Summaries]
-    E --> G[Flow B: Chunks]
-    
-    F --> H[Gemini 2.5 Pro OCR]
-    F --> I[Gemini 2.0 Flash Summary]
-    F --> J[spaCy Keywords]
-    F --> K[Sentence Transformers]
-    F --> L[ChromaDB: summary_collection]
-    
-    G --> M[Gemini 2.5 Pro OCR]
-    G --> N[Header-Based Chunking]
-    G --> O[spaCy Keywords]
-    G --> P[Sentence Transformers]
-    G --> Q[ChromaDB: per_doc_collection]
-    
-    L --> R[Semantic Search API]
-    Q --> R
-```
+4. **Set up environment variables** by creating a `.env` file:
 
-## 🚀 Quick Start
+   ```env
+   # Google Cloud Configuration
+   GOOGLE_API_KEY=your_google_ai_api_key_here
+   GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
+   GCS_BUCKET_NAME=your_gcs_bucket_name
 
-### Prerequisites
+   # Database Configuration
+   DB_HOST=localhost
+   DB_PORT=5434
+   DB_NAME=RAG_OCR_POC_DB
+   DB_USER=postgres
+   DB_PASSWORD=your_database_password
 
-- Python 3.8+
-- Google Cloud Project with GCS and Pub/Sub enabled
-- ChromaDB Cloud account
-- Gemini AI API key
+   # Application Configuration
+   APP_HOST=127.0.0.1
+   APP_PORT=8080
 
-### 1. Installation
+   # Vector Database Configuration
+   VECTOR_DIMENSION=768
+   SIMILARITY_TOP_K=5
+   ```
 
-```bash
-# Clone repository
-git clone <repository-url>
-cd "Test MAGi OCR POC Backend"
+5. **Place your Google Cloud service account credentials** in `gcs_credentials.json`
 
-# Create virtual environment
-python -m venv .venv
+6. **Ensure your PostgreSQL database has the pgvector extension:**
 
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
-```
+## Usage
 
-### 2. Environment Configuration
+### Starting the Server
 
-Create `.env` file in the project root:
-
-```env
-# Google Cloud Configuration
-GOOGLE_CLOUD_PROJECT=magi-mvp-dev
-GCS_BUCKET_NAME=magi-mvp-dev-index-data
-GCS_BUCKET_PREFIX=inspection_docs
-
-# Pub/Sub Configuration (Optional)
-ENABLE_PUBSUB=true
-PUBSUB_SUBSCRIPTION_NAME=document-processing-sub
-
-# Gemini AI Configuration
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# ChromaDB Cloud Configuration
-CHROMA_HOST=api.trychroma.com
-CHROMA_PORT=443
-CHROMA_API_KEY=your_chroma_api_key
-CHROMA_TENANT=your_tenant_id
-CHROMA_DATABASE=vector_db
-
-# Processing Configuration
-MONITORING_INTERVAL=1
-MAX_WORKERS=3
-BATCH_SIZE=10
-```
-
-### 3. Google Cloud Setup
+#### Option 1: Using uvicorn directly
 
 ```bash
-# Install Google Cloud SDK
-# Set up authentication
-gcloud auth login
-gcloud config set project magi-mvp-dev
-
-# Create Pub/Sub subscription (optional)
-gcloud pubsub subscriptions create document-processing-sub \
-  --topic=your-topic-name
+python -m uvicorn app:app --host 127.0.0.1 --port 8080
 ```
 
-### 4. Run the Server
+#### Option 2: Running the app directly
 
 ```bash
-# Development mode (with auto-reload)
-uvicorn test:app --host 127.0.0.1 --port 8000 --reload
-
-# Production mode
-uvicorn test:app --host 0.0.0.0 --port 8000
-
-# Background process (Windows)
-Start-Process -FilePath ".venv/Scripts/python.exe" -ArgumentList "-m","uvicorn","test:app","--host","127.0.0.1","--port","8000" -NoNewWindow
+python app.py
 ```
 
-### 5. Verify Installation
+The API will be available at `http://127.0.0.1:8080`
 
-```bash
-# Check server health
-curl http://127.0.0.1:8000/pipeline/status
+### API Documentation
 
-# View API documentation
-# Open: http://127.0.0.1:8000/docs
+Once the server is running, visit:
+
+- **Interactive API Docs**: `http://127.0.0.1:8080/docs` (Swagger UI)
+- **Alternative Docs**: `http://127.0.0.1:8080/redoc` (ReDoc)
+
+## API Endpoints
+
+### 1. Health Check
+
+```http
+GET /
 ```
 
-## 📖 API Documentation
-
-### Core Pipeline Endpoints
-
-#### Pipeline Management
-
-- `POST /pipeline/start` - Initialize pipeline with configuration
-- `GET /pipeline/status` - Get current pipeline status
-- `POST /pipeline/process` - Process documents with monitoring
-- `POST /pipeline/stop` - Stop pipeline gracefully
-
-#### Real-Time Monitoring
-
-- `GET /monitoring/realtime/status` - Get comprehensive monitoring status
-- `POST /monitoring/realtime/start` - Start enhanced real-time monitoring
-- `POST /monitoring/realtime/stop` - Stop real-time monitoring
-- `GET /monitoring/realtime/test` - Test real-time detection capability
-
-#### Document Processing
-
-- `POST /documents/process` - Process specific document
-- `GET /flows/status` - Get dual-flow processing statistics
-
-#### Search & Retrieval
-
-- `POST /search/summary` - Search Flow A summary collection
-- `POST /search/chunks` - Search Flow B chunks collection
-- `POST /search` - General document search
-
-#### ChromaDB Management
-
-- `GET /chromadb/collections` - View all collections and counts
-- `GET /chromadb/collection/{name}/sample` - Get sample documents
-- `GET /chromadb/search-test` - Test search functionality
-
-#### Analytics & Debug
-
-- `GET /analytics` - Processing statistics and performance metrics
-- `GET /debug/bucket-structure` - GCS bucket structure analysis
-- `GET /debug/filter-preview` - Preview folder filtering results
-- `POST /debug/test-filter` - Test custom filter settings
-
-### Request/Response Examples
-
-#### Start Pipeline
-
-```bash
-curl -X POST "http://127.0.0.1:8000/pipeline/start" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "bucket_name": "magi-mvp-dev-index-data",
-    "process_existing": true,
-    "enable_monitoring": true,
-    "enable_realtime": true,
-    "include_folders": ["inspection_docs/"],
-    "max_workers": 3,
-    "monitoring_interval": 1
-  }'
-```
-
-#### Search Documents
-
-```bash
-# Search summaries
-curl -X POST "http://127.0.0.1:8000/search/summary" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "maintenance inspection report",
-    "top_k": 5
-  }'
-
-# Search chunks
-curl -X POST "http://127.0.0.1:8000/search/chunks" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "dimensional specifications",
-    "top_k": 3
-  }'
-```
-
-## 🔧 Configuration Options
-
-### Processing Configuration
-
-```python
-# In test.py CONFIG class
-monitoring_interval: int = 1          # Real-time monitoring (1-300s)
-max_workers: int = 3                  # Concurrent processing threads
-batch_size: int = 10                  # Document batch size
-max_retries: int = 3                  # Gemini API retry attempts
-```
-
-### Folder Filtering
-
-```python
-include_folders: Optional[List[str]] = ["inspection_docs/"]
-exclude_folders: List[str] = ["temp/", "archive/"]
-root_only: bool = False               # Process root files only
-folder_depth_limit: int = 10          # Maximum folder depth
-```
-
-### AI Model Configuration
-
-```python
-# Gemini Models
-extraction_model = "gemini-2.5-pro"   # OCR and text extraction
-summary_model = "gemini-2.0-flash-exp" # Fast summarization
-
-# Embedding Model
-embedding_model = "all-MiniLM-L6-v2"  # Sentence transformers
-embedding_dimension = 384              # Vector dimensions
-```
-
-## 📊 Monitoring & Analytics
-
-### Real-Time Statistics
-
-The pipeline provides comprehensive monitoring through `/monitoring/realtime/status`:
+**Response:**
 
 ```json
 {
-  "status": "active",
-  "monitoring_active": true,
-  "pubsub_active": true,
-  "bucket": "magi-mvp-dev-index-data",
-  "statistics": {
-    "total_processed": 15,
-    "realtime_processed": 8,
-    "polling_processed": 7,
-    "realtime_percentage": 53.3,
-    "polling_percentage": 46.7,
-    "last_detection": "2025-10-10T15:30:45.123456",
-    "monitoring_interval_seconds": 1
-  }
+  "message": "RAG System API"
 }
 ```
 
-### Processing Analytics
+### 2. Upload Files
 
-Access detailed processing metrics via `/analytics`:
+```http
+POST /upload
+```
+
+Upload files to be processed and ingested into the RAG system.
+
+**Parameters:**
+
+- `files`: List of files to upload (multipart/form-data)
+- `index_name`: Name of the index to store documents in (default: "default")
+
+**Supported file types:** PDF, DOCX, DOC, TXT, RTF, HTML, HTM, MD, CSV, JPG, JPEG, PNG, GIF, BMP, TIFF, EML, MSG, MBOX, EMLX, MBX
+
+**Example using curl:**
+
+```bash
+curl -X POST "http://127.0.0.1:8080/upload" \
+     -F "files=@document.pdf" \
+     -F "files=@report.docx" \
+     -F "index_name=my_documents"
+```
+
+**Response:**
 
 ```json
 {
-  "analytics": {
-    "total_documents": 25,
-    "successfully_processed": 24,
-    "processing_errors": 1,
-    "success_rate": 96.0,
-    "recent_documents": ["inspection_docs/report1.pdf"],
-    "flow_statistics": {
-      "flow_a_summary_count": 24,
-      "flow_b_chunk_count": 24,
-      "flow_a_success_rate": 100.0,
-      "flow_b_success_rate": 100.0
-    }
-  }
+  "message": "Successfully uploaded 2 files. Ingestion started in background.",
+  "uploaded_files": ["uuid1_document.pdf", "uuid2_report.docx"],
+  "document_ids": ["doc-id-1", "doc-id-2"],
+  "status": "ingestion_in_progress"
 }
 ```
 
-## � Search Capabilities
+### 3. Query the RAG System
 
-### Semantic Search Features
+```http
+POST /query
+```
 
-- **Multi-Collection Search**: Search across summaries or document chunks
-- **Similarity Scoring**: Cosine similarity with relevance ranking
-- **Metadata Filtering**: Search with document metadata constraints
-- **Flexible Results**: Configurable result count (1-20 documents)
+Query the system for information based on ingested documents.
 
-### Search Response Format
+**Request Body:**
 
 ```json
 {
-  "query": "inspection report",
-  "collection": "summary_collection",
-  "flow": "A",
-  "results": [
-    {
-      "id": "doc_id_hash",
-      "content": "Document summary content...",
-      "metadata": {
-        "filename": "inspection_docs/report.pdf",
-        "flow": "A",
-        "keywords": "inspection, maintenance, safety"
-      },
-      "similarity_score": 0.85,
-      "flow": "A - Summary"
-    }
-  ],
-  "total_results": 1
+  "query": "What are the main points discussed in the uploaded documents?",
+  "index_name": "default",
+  "top_k": 5
 }
 ```
 
-## 🏭 Production Deployment
+**Parameters:**
 
-### Docker Deployment
+- `query`: The natural language question to ask
+- `index_name`: Which document index to search (default: "default")
+- `top_k`: Number of similar documents to consider (optional, default: 5)
 
-```dockerfile
-FROM python:3.11-slim
+**Example using curl:**
 
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-EXPOSE 8000
-
-CMD ["uvicorn", "test:app", "--host", "0.0.0.0", "--port", "8000"]
+```bash
+curl -X POST "http://127.0.0.1:8080/query" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "query": "Summarize the key findings from the documents",
+       "index_name": "default",
+       "top_k": 3
+     }'
 ```
+
+**Response:**
+
+```json
+{
+  "answer": "Based on the uploaded documents, the key findings include: 1) Market analysis shows 15% growth, 2) Customer satisfaction improved by 23%, 3) New product launch scheduled for Q2..."
+}
+```
+
+## Architecture
+
+### Core Components
+
+1. **FastAPI Application** (`app.py`)
+   - REST API endpoints
+   - File upload handling
+   - Background task processing
+   - Error handling and validation
+
+2. **RAG Engine** (`main.py`)
+   - Document processing and text extraction
+   - Structured data extraction using Gemini 2.5 Flash AI
+   - Vector embeddings generation (using custom Gemini text-embedding-004) and storage
+   - Query processing with caching
+   - Multiple index support
+
+3. **Data Models** (`models.py`)
+   - Pydantic models for API requests/responses
+   - Document metadata structures
+   - Structured document data schemas
+
+4. **External Services**
+   - **Google Cloud Storage**: File storage for uploaded documents
+   - **PostgreSQL + pgvector**: Vector database for embeddings
+   - **Google Gemini 2.5 Flash AI**: LLM for text extraction and query responses
+
+### Data Processing Pipeline
+
+1. **Upload Phase**:
+   - Files uploaded via API → Validated for supported formats
+   - Stored in Google Cloud Storage with unique identifiers
+   - Document metadata created and tracked
+
+2. **Ingestion Phase** (Background Processing):
+   - Files downloaded from GCS
+   - Text extracted using Gemini 2.5 Flash AI or fallback parsers
+   - Structured data (title, author, summary, key points, entities, categories, language, word count) extracted
+   - Documents chunked into smaller segments and converted to embeddings using Gemini text-embedding-004
+   - Embeddings generated and stored in vector database
+
+3. **Query Phase**:
+   - Natural language query received
+   - Query converted to embedding vector using Gemini text-embedding-004
+   - Similarity search performed in vector database
+   - Relevant document chunks retrieved
+   - Gemini 2.5 Flash AI generates contextual response
+
+### Key Features
+
+- **Asynchronous Processing**: File ingestion happens in background tasks
+- **Query Caching**: 5-minute in-memory cache for improved performance
+- **Multiple Indexes**: Support for separate document namespaces
+- **Comprehensive Text Extraction**: Handles 20+ file formats
+- **Structured Metadata**: Automatic extraction of document properties
+- **Error Handling**: Robust error handling with detailed logging
+
+## Configuration
 
 ### Environment Variables
 
-```bash
-# Production environment
-export ENVIRONMENT=production
-export LOG_LEVEL=INFO
-export MAX_WORKERS=5
-export MONITORING_INTERVAL=5
-export ENABLE_PUBSUB=true
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `GOOGLE_API_KEY` | Google AI API key for Gemini | - | Yes |
+| `GCS_BUCKET_NAME` | Google Cloud Storage bucket name | - | Yes |
+| `DB_HOST` | PostgreSQL host | - | Yes |
+| `DB_PORT` | PostgreSQL port | 5434 | No |
+| `DB_NAME` | PostgreSQL database name | - | Yes |
+| `DB_USER` | PostgreSQL username | - | Yes |
+| `DB_PASSWORD` | PostgreSQL password | - | Yes |
+| `APP_HOST` | FastAPI server host | 127.0.0.1 | No |
+| `APP_PORT` | FastAPI server port | 8080 | No |
+| `VECTOR_DIMENSION` | Embedding vector dimension | 768 | No |
+| `SIMILARITY_TOP_K` | Documents to retrieve for queries | 5 | No |
+
+### Google Cloud Setup
+
+1. **Create a Google Cloud Project**
+2. **Enable required APIs**:
+   - Google Cloud Storage API
+   - Google AI (Gemini) API
+3. **Create a service account** with these roles:
+   - Storage Admin (for GCS access)
+   - AI Platform Developer (for Gemini API)
+4. **Download the service account key** as JSON and save as `gcs_credentials.json`
+
+### Database Setup
+
+1. **Install PostgreSQL** with pgvector extension
+2. **Create database**:
+
+   ```sql
+   CREATE DATABASE RAG_OCR_POC_DB;
+   ```
+
+3. **Enable pgvector**:
+
+   ```sql
+   \c RAG_OCR_POC_DB;
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+
+## Development
+
+### Project Structure
+
+```text
+magi-poc-rag-ocr-processing/
+├── app.py                    # FastAPI application and API endpoints
+├── main.py                   # Core RAG functionality and processing
+├── models.py                 # Pydantic data models and schemas
+├── requirements.txt          # Python dependencies
+├── .env                      # Environment variables (create from template)
+├── gcs_credentials.json      # Google Cloud credentials (not in repo)
+├── README.md                 # This documentation
+├── .gitignore               # Git ignore rules
+└── .venv/                   # Virtual environment (not in repo)
 ```
 
-### Health Checks
+### Dependencies
 
-```bash
-# Kubernetes health check
-curl -f http://localhost:8000/pipeline/status || exit 1
+**Core Framework:**
 
-# Docker health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/ || exit 1
-```
+- `fastapi` - Web framework
+- `uvicorn` - ASGI server
 
-## 🔒 Security Considerations
+**AI/ML:**
 
-### Authentication
+- `llama-index==0.10.28` - RAG framework
+- `llama-index-vector-stores-postgres==0.1.14` - Vector store integration
+- `llama-index-llms-gemini==0.2.0` - LlamaIndex Gemini integration
+- `google-generativeai` - Gemini 2.5 Flash AI integration
 
-- ChromaDB API key authentication
-- Google Cloud service account credentials
-- Gemini API key management
-- Environment variable security
+**Database:**
 
-### Network Security
+- `psycopg2-binary` - PostgreSQL driver
+- `pgvector==0.2.5` - Vector extension support
 
-- HTTPS/SSL for ChromaDB Cloud connections
-- VPC network isolation for GCS access
-- API rate limiting and quota management
-- Input validation and sanitization
+**File Processing:**
 
-## 🚨 Troubleshooting
+- `python-docx` - Word document processing
+- `python-magic-bin` - File type detection
+- `beautifulsoup4` - HTML parsing
+- `pandas` - CSV processing
+- `lxml` - XML/HTML parsing
+
+**Cloud Services:**
+
+- `google-cloud-storage` - GCS integration
+
+**Utilities:**
+
+- `python-dotenv` - Environment variable management
+- `python-multipart` - Multipart form data handling
+
+## Troubleshooting
 
 ### Common Issues
 
-#### Pub/Sub 404 Errors
+1. **"RAG system not properly initialized"**
+   - Check that all environment variables are set correctly
+   - Verify database connection and pgvector extension
+   - Ensure Google Cloud credentials are valid
 
-```bash
-# Verify subscription exists
-gcloud pubsub subscriptions list
+2. **File upload fails**
+   - Check file size limits
+   - Verify supported file formats
+   - Ensure GCS bucket exists and credentials have write access
 
-# Check IAM permissions
-gcloud projects get-iam-policy magi-mvp-dev
-```
+3. **Query returns no results**
+   - Confirm documents were successfully ingested
+   - Check correct `index_name` is being used
+   - Verify vector database contains data
 
-#### Gemini API Rate Limits
+4. **Google Cloud authentication errors**
+   - Ensure `gcs_credentials.json` exists and is valid
+   - Check service account has required permissions
+   - Verify `GOOGLE_API_KEY` is correct
 
-- Check API quota in Google Cloud Console
-- Verify API key validity and permissions
-- Monitor rate limiting logs for backoff behavior
+5. **Database connection errors**
+   - Confirm PostgreSQL is running
+   - Check connection parameters in `.env`
+   - Ensure pgvector extension is installed
 
-#### ChromaDB Connection Issues
+### Performance Optimization
 
-- Verify API key and tenant configuration
-- Check network connectivity to api.trychroma.com
-- Review ChromaDB Cloud dashboard for service status
+- **Query Caching**: Responses are cached for 5 minutes to improve performance
+- **Background Processing**: File ingestion happens asynchronously
+- **Chunking**: Documents are split into 512-character chunks with 50-character overlap
+- **Similarity Search**: Configurable number of similar documents retrieved
 
-#### Document Processing Failures
+### Monitoring
 
-- Check GCS bucket permissions
-- Verify supported file formats (PDF, images)
-- Monitor Gemini API response times and errors
+- Check console output for detailed processing logs
+- API responses include processing status and document counts
+- Background tasks provide ingestion progress updates
 
-### Debug Mode
-
-```bash
-# Enable debug logging
-export LOG_LEVEL=DEBUG
-uvicorn test:app --log-level debug
-
-# Check processing statistics
-curl http://127.0.0.1:8000/debug/bucket-structure
-curl http://127.0.0.1:8000/debug/filter-preview
-```
-
-## � Dependencies
-
-### Core Dependencies
-
-- **FastAPI**: Modern web framework for APIs
-- **Uvicorn**: ASGI server for FastAPI
-- **Google Cloud Storage**: Document storage and monitoring
-- **Google Cloud Pub/Sub**: Real-time notifications
-- **ChromaDB**: Vector database for embeddings
-- **Sentence Transformers**: Text embeddings
-- **spaCy**: Natural language processing
-- **Google Generative AI**: Gemini models for OCR/summarization
-
-### Full Requirements
-
-See [requirements.txt](requirements.txt) for complete dependency list with versions.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## �‍♂️ Support
-
-### Documentation
-
-- **API Docs**: <http://127.0.0.1:8000/docs> (when server is running)
-- **Alternative Docs**: <http://127.0.0.1:8000/redoc>
-
-### Issues
-
-For technical issues, feature requests, or questions:
-
-1. Check existing documentation
-2. Review troubleshooting section
-3. Create detailed issue report with logs
-
----
-
-### Built with ❤️ for intelligent document processing
-
-Real-time • Scalable • Production-Ready
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-## 🙏 Acknowledgments
+## License
 
-- **FastAPI** - Modern, fast web framework for building APIs
-- **Google Cloud** - Cloud storage and AI services  
-- **Gemini AI** - Advanced language models (2.5 Pro + 2.0 Flash) for document processing
-- **ChromaDB Cloud** - Production-grade vector database with cloud hosting
-- **spaCy** - Industrial-strength natural language processing
-- **Sentence Transformers** - State-of-the-art 384-dimensional text embeddings
+This project is licensed under the MIT License - see the LICENSE file for details.
 
----
+## Support
 
-Built with ❤️ for intelligent dual-flow document processing with real-time monitoring
+For questions or issues:
+
+1. Check the troubleshooting section above
+2. Review the API documentation at `/docs`
+3. Check the console logs for detailed error messages
+4. Ensure all prerequisites are properly configured
