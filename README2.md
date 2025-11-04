@@ -1,429 +1,424 @@
-# MAGI POC RAG OCR Processing
+# 🚀 Quick Start Guide - Conversational RAG API
 
-A Retrieval-Augmented Generation (RAG) system built with FastAPI, LlamaIndex, and Google Gemini 2.5 Flash AI. This system allows you to upload documents, automatically process them, and query for information using natural language.
+## Overview
 
-## Features
+Your RAG system has been upgraded to a **Conversational AI** platform! You can now have natural, multi-turn conversations with your documents.
 
-- **Document Upload & Processing**: Upload various file types (PDF, DOCX, images, emails, etc.) to Google Cloud Storage
-- **Automatic Text Extraction**: Uses Google Gemini 2.5 Flash AI to extract text from multiple file formats
-- **Structured Data Extraction**: Automatically extracts metadata including title, author, summary, key points, entities, categories, language, and word count
-- **Vector Storage**: Stores document embeddings (using Gemini text-embedding-004) in PostgreSQL with pgvector for efficient similarity search
-- **Natural Language Querying**: Query the system using natural language to get relevant answers
-- **RESTful API**: Clean FastAPI-based REST API for easy integration
-- **Multiple Index Support**: Support for multiple document indexes/namespaces
-- **Background Processing**: Asynchronous document ingestion for better performance
-- **Query Caching**: In-memory caching for improved response times
-- **Comprehensive File Support**: Handles 20+ file formats including documents, images, and emails
+---
 
-## Supported File Types
+## What's New? 🎉
 
-- **Documents**: PDF, DOCX, DOC, TXT, RTF, HTML, HTM, MD
-- **Data Files**: CSV
-- **Images**: JPEG, JPG, PNG, GIF, BMP, TIFF
-- **Email**: EML, MSG, MBOX, EMLX, MBX
-- **Archives**: ZIP (with document contents)
+### Before (Response AI)
 
-## Prerequisites
+```python
 
-- **Python 3.8+**
-- **Google Cloud Platform account** with:
-  - Google Cloud Storage bucket
-  - Service account with appropriate permissions
-  - Google AI API key (for Gemini)
-- **PostgreSQL database** with pgvector extension enabled
-- **Google Cloud credentials JSON file**
+# Each question was independent
+response = query("What is machine learning?")
 
-## Installation
+# ❌ System has no memory of this question
 
-1. **Clone the repository:**
+response = query("Tell me more")  
 
-   ```bash
-   git clone <repository-url>
-   cd magi-poc-rag-ocr-processing
-   ```
-
-2. **Create virtual environment:**
-
-   ```bash
-   python -m venv .venv
-   # On Windows:
-   .venv\Scripts\activate
-   # On macOS/Linux:
-   source .venv/bin/activate
-   ```
-
-3. **Install dependencies:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables** by creating a `.env` file:
-
-   ```env
-   # Google Cloud Configuration
-   GOOGLE_API_KEY=your_google_ai_api_key_here
-   GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
-   GCS_BUCKET_NAME=your_gcs_bucket_name
-
-   # Database Configuration
-   DB_HOST=localhost
-   DB_PORT=5434
-   DB_NAME=RAG_OCR_POC_DB
-   DB_USER=postgres
-   DB_PASSWORD=your_database_password
-
-   # Application Configuration
-   APP_HOST=127.0.0.1
-   APP_PORT=8080
-
-   # Vector Database Configuration
-   VECTOR_DIMENSION=768
-   SIMILARITY_TOP_K=5
-   ```
-
-5. **Place your Google Cloud service account credentials** in `gcs_credentials.json`
-
-6. **Ensure your PostgreSQL database has the pgvector extension:**
-
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS vector;
-   ```
-
-## Usage
-
-### Starting the Server
-
-#### Option 1: Using uvicorn directly
-
-```bash
-python -m uvicorn app:app --host 127.0.0.1 --port 8080
-```
-
-#### Option 2: Running the app directly
-
-```bash
-python app.py
-```
-
-The API will be available at `http://127.0.0.1:8080`
-
-### API Documentation
-
-Once the server is running, visit:
-
-- **Interactive API Docs**: `http://127.0.0.1:8080/docs` (Swagger UI)
-- **Alternative Docs**: `http://127.0.0.1:8080/redoc` (ReDoc)
-
-## API Endpoints
-
-### 1. Health Check
-
-```http
-GET /
-```
-
-**Response:**
-
-```json
-{
-  "message": "RAG System API"
-}
-```
-
-### 2. Upload Files
-
-```http
-POST /upload
-```
-
-Upload files to be processed and ingested into the RAG system.
-
-**Parameters:**
-
-- `files`: List of files to upload (multipart/form-data)
-- `index_name`: Name of the index to store documents in (default: "default")
-
-**Supported file types:** PDF, DOCX, DOC, TXT, RTF, HTML, HTM, MD, CSV, JPG, JPEG, PNG, GIF, BMP, TIFF, EML, MSG, MBOX, EMLX, MBX
-
-**Example using curl:**
-
-```bash
-curl -X POST "http://127.0.0.1:8080/upload" \
-     -F "files=@document.pdf" \
-     -F "files=@report.docx" \
-     -F "index_name=my_documents"
-```
-
-**Response:**
-
-```json
-{
-  "message": "Successfully uploaded 2 files. Ingestion started in background.",
-  "uploaded_files": ["uuid1_document.pdf", "uuid2_report.docx"],
-  "document_ids": ["doc-id-1", "doc-id-2"],
-  "status": "ingestion_in_progress"
-}
-```
-
-### 3. Query the RAG System
-
-```http
-POST /query
-```
-
-Query the system for information based on ingested documents.
-
-**Request Body:**
-
-```json
-{
-  "query": "What are the main points discussed in the uploaded documents?",
-  "index_name": "default",
-  "top_k": 5
-}
-```
-
-**Parameters:**
-
-- `query`: The natural language question to ask
-- `index_name`: Which document index to search (default: "default")
-- `top_k`: Number of similar documents to consider (optional, default: 5)
-
-**Example using curl:**
-
-```bash
-curl -X POST "http://127.0.0.1:8080/query" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "query": "Summarize the key findings from the documents",
-       "index_name": "default",
-       "top_k": 3
-     }'
-```
-
-**Response:**
-
-```json
-{
-  "answer": "Based on the uploaded documents, the key findings include: 1) Market analysis shows 15% growth, 2) Customer satisfaction improved by 23%, 3) New product launch scheduled for Q2..."
-}
-```
-
-## Architecture
-
-### Core Components
-
-1. **FastAPI Application** (`app.py`)
-   - REST API endpoints
-   - File upload handling
-   - Background task processing
-   - Error handling and validation
-
-2. **RAG Engine** (`main.py`)
-   - Document processing and text extraction
-   - Structured data extraction using Gemini 2.5 Flash AI
-   - Vector embeddings generation (using custom Gemini text-embedding-004) and storage
-   - Query processing with caching
-   - Multiple index support
-
-3. **Data Models** (`models.py`)
-   - Pydantic models for API requests/responses
-   - Document metadata structures
-   - Structured document data schemas
-
-4. **External Services**
-   - **Google Cloud Storage**: File storage for uploaded documents
-   - **PostgreSQL + pgvector**: Vector database for embeddings
-   - **Google Gemini 2.5 Flash AI**: LLM for text extraction and query responses
-
-### Data Processing Pipeline
-
-1. **Upload Phase**:
-   - Files uploaded via API → Validated for supported formats
-   - Stored in Google Cloud Storage with unique identifiers
-   - Document metadata created and tracked
-
-2. **Ingestion Phase** (Background Processing):
-   - Files downloaded from GCS
-   - Text extracted using Gemini 2.5 Flash AI or fallback parsers
-   - Structured data (title, author, summary, key points, entities, categories, language, word count) extracted
-   - Documents chunked into smaller segments and converted to embeddings using Gemini text-embedding-004
-   - Embeddings generated and stored in vector database
-
-3. **Query Phase**:
-   - Natural language query received
-   - Query converted to embedding vector using Gemini text-embedding-004
-   - Similarity search performed in vector database
-   - Relevant document chunks retrieved
-   - Gemini 2.5 Flash AI generates contextual response
-
-### Key Features
-
-- **Asynchronous Processing**: File ingestion happens in background tasks
-- **Query Caching**: 5-minute in-memory cache for improved performance
-- **Multiple Indexes**: Support for separate document namespaces
-- **Comprehensive Text Extraction**: Handles 20+ file formats
-- **Structured Metadata**: Automatic extraction of document properties
-- **Error Handling**: Robust error handling with detailed logging
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `GOOGLE_API_KEY` | Google AI API key for Gemini | - | Yes |
-| `GCS_BUCKET_NAME` | Google Cloud Storage bucket name | - | Yes |
-| `DB_HOST` | PostgreSQL host | - | Yes |
-| `DB_PORT` | PostgreSQL port | 5434 | No |
-| `DB_NAME` | PostgreSQL database name | - | Yes |
-| `DB_USER` | PostgreSQL username | - | Yes |
-| `DB_PASSWORD` | PostgreSQL password | - | Yes |
-| `APP_HOST` | FastAPI server host | 127.0.0.1 | No |
-| `APP_PORT` | FastAPI server port | 8080 | No |
-| `VECTOR_DIMENSION` | Embedding vector dimension | 768 | No |
-| `SIMILARITY_TOP_K` | Documents to retrieve for queries | 5 | No |
-
-### Google Cloud Setup
-
-1. **Create a Google Cloud Project**
-2. **Enable required APIs**:
-   - Google Cloud Storage API
-   - Google AI (Gemini) API
-3. **Create a service account** with these roles:
-   - Storage Admin (for GCS access)
-   - AI Platform Developer (for Gemini API)
-4. **Download the service account key** as JSON and save as `gcs_credentials.json`
-
-### Database Setup
-
-1. **Install PostgreSQL** with pgvector extension
-2. **Create database**:
-
-   ```sql
-   CREATE DATABASE RAG_OCR_POC_DB;
-   ```
-
-3. **Enable pgvector**:
-
-   ```sql
-   \c RAG_OCR_POC_DB;
-   CREATE EXTENSION IF NOT EXISTS vector;
-   ```
-
-## Development
-
-### Project Structure
+# ❌ "More about what?" - No context!
 
 ```text
-magi-poc-rag-ocr-processing/
-├── app.py                    # FastAPI application and API endpoints
-├── main.py                   # Core RAG functionality and processing
-├── models.py                 # Pydantic data models and schemas
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variables (create from template)
-├── gcs_credentials.json      # Google Cloud credentials (not in repo)
-├── README.md                 # This documentation
-├── .gitignore               # Git ignore rules
-└── .venv/                   # Virtual environment (not in repo)
-```
 
-### Dependencies
+### After (Conversational AI)
 
-**Core Framework:**
+```python
 
-- `fastapi` - Web framework
-- `uvicorn` - ASGI server
+# Start a conversation
+conv_id = create_conversation()
 
-**AI/ML:**
+# First question
+response = query("What is machine learning?", conv_id)
 
-- `llama-index==0.10.28` - RAG framework
-- `llama-index-vector-stores-postgres==0.1.14` - Vector store integration
-- `llama-index-llms-gemini==0.2.0` - LlamaIndex Gemini integration
-- `google-generativeai` - Gemini 2.5 Flash AI integration
+# ✅ System remembers this
 
-**Database:**
+# Follow-up question
+response = query("Tell me more", conv_id)
 
-- `psycopg2-binary` - PostgreSQL driver
-- `pgvector==0.2.5` - Vector extension support
+# ✅ System knows you mean machine learning!
 
-**File Processing:**
+# Another follow-up
+response = query("What are the applications?", conv_id)
 
-- `python-docx` - Word document processing
-- `python-magic-bin` - File type detection
-- `beautifulsoup4` - HTML parsing
-- `pandas` - CSV processing
-- `lxml` - XML/HTML parsing
+# ✅ System maintains full context!
 
-**Cloud Services:**
+```text
 
-- `google-cloud-storage` - GCS integration
+---
 
-**Utilities:**
+## Quick Start in 5 Steps
 
-- `python-dotenv` - Environment variable management
-- `python-multipart` - Multipart form data handling
+### Step 1: Start the Server
+
+```bash
+uvicorn app:app --reload --port 8080
+```text
+
+### Step 2: Upload a Document
+
+```bash
+curl -X POST "http://localhost:8080/upload" \
+
+  -F "files=@your_document.pdf" \
+  -F "index_name=default"
+```text
+
+**Response:**
+
+```json
+{
+  "document_ids": ["doc-abc-123"],
+  "message": "Successfully uploaded 1 files"
+}
+```text
+
+### Step 3: Start a Conversation
+
+```bash
+curl -X POST "http://localhost:8080/conversation/create" \
+
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_id": "doc-abc-123",
+    "index_name": "default"
+  }'
+```text
+
+**Response:**
+
+```json
+{
+  "conversation_id": "conv-xyz-789",
+  "document_name": "your_document.pdf"
+}
+```text
+
+### Step 4: Ask Questions (With Context!)
+
+```bash
+
+# First question
+curl -X POST "http://localhost:8080/conversation/query" \
+
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is the main topic?",
+    "conversation_id": "conv-xyz-789",
+    "document_id": "doc-abc-123"
+  }'
+
+# Follow-up question (maintains context)
+curl -X POST "http://localhost:8080/conversation/query" \
+
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Can you elaborate on that?",
+    "conversation_id": "conv-xyz-789"
+  }'
+
+# Another follow-up
+curl -X POST "http://localhost:8080/conversation/query" \
+
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the key findings?",
+    "conversation_id": "conv-xyz-789"
+  }'
+```text
+
+### Step 5: View Conversation History
+
+```bash
+curl "http://localhost:8080/conversation/conv-xyz-789"
+```text
+
+**Response:**
+
+```json
+{
+  "conversation": {
+    "conversation_id": "conv-xyz-789",
+    "document_name": "your_document.pdf"
+  },
+  "messages": [
+    {"role": "user", "content": "What is the main topic?"},
+    {"role": "assistant", "content": "The main topic is..."},
+    {"role": "user", "content": "Can you elaborate on that?"},
+    {"role": "assistant", "content": "Certainly! ..."}
+  ]
+}
+```text
+
+---
+
+## Python Example
+
+```python
+import requests
+
+BASE_URL = "http://localhost:8080"
+
+# 1. Upload document
+with open('document.pdf', 'rb') as f:
+    response = requests.post(
+        f"{BASE_URL}/upload",
+        files={'files': f},
+        data={'index_name': 'default'}
+    )
+    doc_id = response.json()['document_ids'][0]
+    print(f"Uploaded: {doc_id}")
+
+# 2. Create conversation
+response = requests.post(
+    f"{BASE_URL}/conversation/create",
+    json={
+        "document_id": doc_id,
+        "index_name": "default"
+    }
+)
+conv_id = response.json()['conversation_id']
+print(f"Conversation: {conv_id}")
+
+# 3. Start chatting!
+questions = [
+    "What is this document about?",
+    "Can you summarize the key points?",
+    "What are the main findings?",
+    "Are there any limitations mentioned?"
+]
+
+for question in questions:
+    response = requests.post(
+        f"{BASE_URL}/conversation/query",
+        json={
+            "query": question,
+            "conversation_id": conv_id,
+            "document_id": doc_id
+        }
+    )
+    answer = response.json()['answer']
+    print(f"\nQ: {question}")
+    print(f"A: {answer[:200]}...")
+
+# 4. View full conversation
+response = requests.get(f"{BASE_URL}/conversation/{conv_id}")
+history = response.json()
+print(f"\nTotal messages: {len(history['messages'])}")
+```text
+
+---
+
+## Key Features
+
+### 1. **Auto-Create Conversations**
+Don't want to create a conversation first? Just query!
+
+```python
+
+# System auto-creates conversation
+response = requests.post(
+    f"{BASE_URL}/conversation/query",
+    json={
+        "query": "Summarize this document",
+        "document_id": "doc-123"
+    }
+)
+
+# Returns conversation_id you can use for follow-ups
+conv_id = response.json()['conversation_id']
+```text
+
+### 2. **Document-Specific Conversations**
+Focus on specific documents:
+
+```python
+
+# Conversation tied to specific document
+requests.post(f"{BASE_URL}/conversation/create", json={
+    "document_id": "doc-123"  # All queries focus here
+})
+```text
+
+### 3. **Multi-Document Conversations**
+Query across all documents:
+
+```python
+
+# General conversation (no document_id)
+requests.post(f"{BASE_URL}/conversation/create", json={
+    "index_name": "default"  # Queries all documents
+})
+```text
+
+### 4. **Conversation Management**
+
+```python
+
+# List all conversations
+requests.get(f"{BASE_URL}/conversations")
+
+# Get specific conversation
+requests.get(f"{BASE_URL}/conversation/{conv_id}")
+
+# Delete conversation
+requests.delete(f"{BASE_URL}/conversation/{conv_id}")
+```text
+
+### 5. **Document Management**
+
+```python
+
+# List all documents
+requests.get(f"{BASE_URL}/documents?index_name=default")
+
+# Get specific document
+requests.get(f"{BASE_URL}/document/{doc_id}")
+```text
+
+---
+
+## API Endpoints Cheat Sheet
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/upload` | POST | Upload documents |
+| `/conversation/create` | POST | Create conversation |
+| `/conversation/query` | POST | **Ask questions (main!)** |
+| `/conversation/{id}` | GET | View history |
+| `/conversations` | GET | List all |
+| `/conversation/{id}` | DELETE | Delete |
+| `/documents` | GET | List documents |
+| `/document/{id}` | GET | Get document info |
+| `/query` | POST | Legacy stateless query |
+
+---
+
+## Common Use Cases
+
+### Use Case 1: Research Paper Q&A
+
+```python
+
+# Upload research paper
+upload_pdf("research_paper.pdf")
+
+# Create conversation
+conv_id = create_conversation(doc_id)
+
+# Natural conversation
+query("What is the research question?", conv_id)
+query("What methodology did they use?", conv_id)
+query("What were the results?", conv_id)
+query("What are the limitations?", conv_id)
+```text
+
+### Use Case 2: Document Comparison
+
+```python
+
+# Upload multiple documents
+doc1 = upload("paper1.pdf")
+doc2 = upload("paper2.pdf")
+
+# General conversation
+conv_id = create_conversation()  # No specific document
+
+# Compare across documents
+query("Compare the findings from all papers", conv_id)
+query("Which paper has stronger evidence?", conv_id)
+```text
+
+### Use Case 3: Customer Support Bot
+
+```python
+
+# Upload product manuals
+manual_id = upload("product_manual.pdf")
+
+# Create customer conversation
+conv_id = create_conversation(manual_id)
+
+# Customer questions
+query("How do I set up the device?", conv_id)
+query("What if that doesn't work?", conv_id)
+query("Where can I get support?", conv_id)
+```text
+
+---
+
+## Testing
+
+Run the test script:
+
+```bash
+python test_conversational_api.py
+```text
+
+This will test all conversational features!
+
+---
 
 ## Troubleshooting
 
-### Common Issues
+### Issue: "Conversation not found"
 
-1. **"RAG system not properly initialized"**
-   - Check that all environment variables are set correctly
-   - Verify database connection and pgvector extension
-   - Ensure Google Cloud credentials are valid
+**Solution:** Make sure you're using a valid conversation_id from create_conversation
 
-2. **File upload fails**
-   - Check file size limits
-   - Verify supported file formats
-   - Ensure GCS bucket exists and credentials have write access
+### Issue: "No index found"
 
-3. **Query returns no results**
-   - Confirm documents were successfully ingested
-   - Check correct `index_name` is being used
-   - Verify vector database contains data
+**Solution:** Upload documents first with /upload endpoint
 
-4. **Google Cloud authentication errors**
-   - Ensure `gcs_credentials.json` exists and is valid
-   - Check service account has required permissions
-   - Verify `GOOGLE_API_KEY` is correct
+### Issue: Context not maintained
 
-5. **Database connection errors**
-   - Confirm PostgreSQL is running
-   - Check connection parameters in `.env`
-   - Ensure pgvector extension is installed
+**Solution:** Use the same conversation_id for all follow-up questions
 
-### Performance Optimization
+### Issue: Server not responding
 
-- **Query Caching**: Responses are cached for 5 minutes to improve performance
-- **Background Processing**: File ingestion happens asynchronously
-- **Chunking**: Documents are split into 512-character chunks with 50-character overlap
-- **Similarity Search**: Configurable number of similar documents retrieved
+**Solution:** Check server is running: `uvicorn app:app --reload --port 8080`
 
-### Monitoring
+---
 
-- Check console output for detailed processing logs
-- API responses include processing status and document counts
-- Background tasks provide ingestion progress updates
+## Best Practices
 
-## Contributing
+1. **Create explicit conversations** for better tracking
+2. **Include document_id** for document-specific queries
+3. **Reuse conversation_id** for follow-ups
+4. **View history** to see what the system remembers
+5. **Delete old conversations** to keep things clean
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+---
 
-## License
+## What's Different from Before?
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+| Feature | Before | After |
+|---------|--------|-------|
+| Memory | ❌ None | ✅ Last 5 turns |
+| Follow-ups | ❌ Can't handle | ✅ Natural |
+| Document focus | ❌ No | ✅ Yes |
+| History | ❌ No | ✅ Full history |
+| Sessions | ❌ No | ✅ Yes |
 
-## Support
+---
 
-For questions or issues:
+## Next Steps
 
-1. Check the troubleshooting section above
-2. Review the API documentation at `/docs`
-3. Check the console logs for detailed error messages
-4. Ensure all prerequisites are properly configured
+1. **Read** [CONVERSATIONAL_API_GUIDE.md](CONVERSATIONAL_API_GUIDE.md) for detailed API docs
+2. **Review** [ARCHITECTURE.md](ARCHITECTURE.md) for system architecture
+3. **Check** [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) for what changed
+4. **Run** `test_conversational_api.py` to see it in action
+
+---
+
+## Need Help?
+
+- 📖 Full API docs: `CONVERSATIONAL_API_GUIDE.md`
+- 🏗️ Architecture: `ARCHITECTURE.md`
+- 🔄 What changed: `REFACTORING_SUMMARY.md`
+- 🧪 Test suite: `test_conversational_api.py`
+
+---
+
+**Enjoy your new conversational AI system! 🎉**
