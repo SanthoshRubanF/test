@@ -1,230 +1,472 @@
-# MAGi RAG POC - Document Processing with OCR
+# Conversational RAG API Guide
 
-A Proof of Concept (POC) implementation of a Retrieval-Augmented Generation (RAG) system for document processing with OCR capabilities. This system leverages Google's Gemini AI models for text extraction, document analysis, and natural language querying.
+## Overview
 
-## Features
+This API has been refactored from a simple Response AI to a full **Conversational AI** system that maintains conversation context across multiple queries. The system now supports:
 
-- **Multi-format Document Processing**: Supports PDF, DOCX, images (JPEG, PNG, TIFF), emails (EML, MBOX), HTML, CSV, and plain text files
-- **OCR Integration**: Uses Google Gemini for optical character recognition on images and scanned documents
-- **Structured Data Extraction**: Automatically extracts titles, authors, summaries, key points, entities, and categories from documents
-- **Vector Search**: Powered by PostgreSQL with pgvector for efficient similarity search
-- **RESTful API**: FastAPI-based endpoints for file upload and querying
-- **Google Cloud Storage**: Secure file storage with automatic ingestion
-- **Caching**: Query result caching for improved performance
-- **Background Processing**: Asynchronous document ingestion to prevent blocking
+- **Document-specific conversations**: Query specific documents with context awareness
+- **Multi-turn dialogue**: Maintain conversation history for contextual responses
+- **Session management**: Create, track, and manage conversation sessions
+- **Document tracking**: Associate conversations with specific documents
 
-## Architecture
+## Key Differences: Response AI vs Conversational AI
 
-The system consists of three main components:
+### Before (Response AI)
 
-1. **FastAPI Server** (`app.py`): Handles HTTP requests, file uploads, and API endpoints
-2. **RAG Engine** (`main.py`): Core document processing, vectorization, and querying logic
-3. **Data Models** (`models.py`): Pydantic models for structured data handling
+- Each query was independent
+- No conversation history
+- No context retention
+- Single endpoint for all queries
 
-### Data Flow
+### After (Conversational AI)
 
-1. Documents are uploaded via API and stored in Google Cloud Storage
-2. Background processing extracts text using Gemini (with OCR for images)
-3. Structured information is extracted and validated
-4. Documents are chunked and embedded using Gemini embeddings
-5. Vectors are stored in PostgreSQL with pgvector
-6. Natural language queries retrieve relevant document chunks
-7. Gemini generates contextual answers based on retrieved content
+- Conversations maintain context across multiple turns
+- Full conversation history tracking
+- Document-specific query support
+- Session-based interactions
+- Multiple endpoints for different use cases
 
-## Prerequisites
+---
 
-- Python 3.8+
-- PostgreSQL database with pgvector extension
-- Google Cloud Platform account with:
-  - Storage bucket
-  - Service account credentials
-  - Gemini API access
-- Required Python packages (see `requirements.txt`)
+## API Endpoints
 
-## Installation
+### 1. Upload Documents
 
-1. Clone the repository:
+**POST** `/upload`
 
-   ```bash
-   git clone https://github.com/ConnITLabs/magi-poc-rag-ocr-processing.git
-   cd magi-poc-rag-ocr-processing
-   ```
+Upload files and automatically ingest them into the vector database.
 
-2. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Set up PostgreSQL with pgvector:
-
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS vector;
-   ```
-
-## Configuration
-
-Create a `.env` file in the project root with the following variables:
-
-```env
-# Database Configuration
-DB_HOST=your-postgres-host
-DB_PORT=5432
-DB_NAME=your-database-name
-DB_USER=your-username
-DB_PASSWORD=your-password
-
-# Google Cloud Configuration
-GOOGLE_API_KEY=your-gemini-api-key
-GCS_BUCKET_NAME=your-storage-bucket-name
-
-# Application Settings
-APP_HOST=127.0.0.1
-APP_PORT=8080
-VECTOR_DIMENSION=768
-SIMILARITY_TOP_K=5
-```
-
-### Google Cloud Setup
-
-1. Create a Google Cloud Storage bucket
-2. Create a service account with Storage Admin permissions
-3. Download the service account key as `gcs_credentials.json`
-4. Enable the Gemini API in your Google Cloud project
-
-## Usage
-
-### Starting the Server
+**Request:**
 
 ```bash
-python app.py
-```
+curl -X POST "http://localhost:8080/upload" \
 
-The API will be available at `http://127.0.0.1:8080`
-
-### API Endpoints
-
-#### Upload Documents
-
-```http
-POST /upload
-Content-Type: multipart/form-data
-
-files: [file1.pdf, file2.docx, ...]
-index_name: default
-```
+  -F "files=@document.pdf" \
+  -F "index_name=my_index"
+```text
 
 **Response:**
 
 ```json
 {
-  "message": "Successfully uploaded 2 files. Ingestion started in background.",
-  "uploaded_files": ["uuid1_file1.pdf", "uuid2_file2.docx"],
-  "document_ids": ["doc-id-1", "doc-id-2"],
+  "message": "Successfully uploaded 1 files. Ingestion started in background.",
+  "uploaded_files": ["uuid_document.pdf"],
+  "document_ids": ["doc-uuid-123"],
   "status": "ingestion_in_progress"
 }
-```
+```text
 
-#### Query Documents
+---
 
-```http
-POST /query
-Content-Type: application/json
+### 2. List Documents
 
+**GET** `/documents?index_name=default`
+
+Get all documents in a specific index.
+
+**Response:**
+
+```json
 {
-  "query": "What are the main points discussed in the documents?",
+  "documents": [
+    {
+      "document_id": "doc-uuid-123",
+      "filename": "document.pdf",
+      "upload_timestamp": "2025-11-04T10:30:00Z",
+      "mime_type": "application/pdf",
+      "file_size": 102400
+    }
+  ],
+  "total": 1,
+  "index_name": "default"
+}
+```text
+
+---
+
+### 3. Get Document Details
+
+**GET** `/document/{document_id}`
+
+Get metadata for a specific document.
+
+**Response:**
+
+```json
+{
+  "document_id": "doc-uuid-123",
+  "filename": "document.pdf",
+  "upload_timestamp": "2025-11-04T10:30:00Z",
+  "index_name": "default",
+  "mime_type": "application/pdf",
+  "file_size": 102400
+}
+```text
+
+---
+
+### 4. Create Conversation
+
+**POST** `/conversation/create`
+
+Create a new conversation session, optionally tied to a specific document.
+
+**Request:**
+
+```json
+{
+  "document_id": "doc-uuid-123",  // Optional: tie to specific document
+  "index_name": "default",
+  "user_id": "user-123"  // Optional
+}
+```text
+
+**Response:**
+
+```json
+{
+  "conversation_id": "conv-uuid-456",
+  "document_id": "doc-uuid-123",
+  "document_name": "document.pdf",
+  "index_name": "default",
+  "created_at": "2025-11-04T10:35:00Z",
+  "message": "Conversation created successfully"
+}
+```text
+
+---
+
+### 5. Conversational Query (Main Feature)
+
+**POST** `/conversation/query`
+
+Query with conversation context. This is the core conversational AI endpoint.
+
+**Request:**
+
+```json
+{
+  "query": "What is the main topic of this document?",
+  "conversation_id": "conv-uuid-456",  // Use existing conversation
+  "document_id": "doc-uuid-123",  // Optional: focus on specific document
+  "index_name": "default",
+  "top_k": 5  // Optional: number of similar chunks to retrieve
+}
+```text
+
+**Response:**
+
+```json
+{
+  "conversation_id": "conv-uuid-456",
+  "message": {
+    "role": "user",
+    "content": "What is the main topic of this document?",
+    "timestamp": "2025-11-04T10:36:00Z",
+    "document_id": "doc-uuid-123"
+  },
+  "answer": "Based on the document, the main topic is..."
+}
+```text
+
+**Auto-create conversation:**
+If you don't provide `conversation_id`, a new conversation will be created automatically:
+
+```json
+{
+  "query": "Tell me about this document",
+  "document_id": "doc-uuid-123",
+  "index_name": "default"
+}
+```text
+
+---
+
+### 6. Get Conversation History
+
+**GET** `/conversation/{conversation_id}`
+
+Retrieve full conversation history.
+
+**Response:**
+
+```json
+{
+  "conversation": {
+    "conversation_id": "conv-uuid-456",
+    "document_id": "doc-uuid-123",
+    "document_name": "document.pdf",
+    "index_name": "default",
+    "created_at": "2025-11-04T10:35:00Z",
+    "updated_at": "2025-11-04T10:36:00Z"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the main topic?",
+      "timestamp": "2025-11-04T10:36:00Z"
+    },
+    {
+      "role": "assistant",
+      "content": "The main topic is...",
+      "timestamp": "2025-11-04T10:36:01Z"
+    }
+  ]
+}
+```text
+
+---
+
+### 7. List All Conversations
+
+**GET** `/conversations`
+
+Get all conversation sessions.
+
+**Response:**
+
+```json
+{
+  "conversations": [
+    {
+      "conversation_id": "conv-uuid-456",
+      "document_id": "doc-uuid-123",
+      "document_name": "document.pdf",
+      "index_name": "default",
+      "created_at": "2025-11-04T10:35:00Z",
+      "updated_at": "2025-11-04T10:36:00Z"
+    }
+  ],
+  "total": 1
+}
+```text
+
+---
+
+### 8. Delete Conversation
+
+**DELETE** `/conversation/{conversation_id}`
+
+Delete a conversation session.
+
+**Response:**
+
+```json
+{
+  "message": "Conversation conv-uuid-456 deleted successfully"
+}
+```text
+
+---
+
+### 9. Simple Query (Legacy)
+
+**POST** `/query`
+
+Stateless query without conversation history (original Response AI behavior).
+
+**Request:**
+
+```json
+{
+  "query": "What is machine learning?",
   "index_name": "default",
   "top_k": 5
 }
-```
+```text
 
 **Response:**
 
 ```json
 {
-  "answer": "Based on the uploaded documents, the main points are..."
+  "answer": "Machine learning is..."
 }
-```
-
-### Supported File Types
-
-- **Documents**: PDF, DOCX, DOC, TXT, RTF, HTML, MD
-- **Images**: JPEG, PNG, BMP, TIFF, GIF (processed with OCR)
-- **Emails**: EML, MBOX, MBX
-- **Data**: CSV
-- **Other**: Various text-based formats
-
-## Document Processing
-
-When documents are uploaded, the system:
-
-1. **Validates** file types and sizes
-2. **Extracts text** using appropriate methods:
-   - Gemini for supported formats (PDF, images, DOCX)
-   - Fallback parsers for other formats
-3. **Analyzes content** to extract:
-   - Document title and author
-   - Summary and key points
-   - Named entities and categories
-   - Language and word count
-4. **Chunks text** into manageable pieces
-5. **Generates embeddings** using Gemini
-6. **Stores vectors** in PostgreSQL
-
-## Querying
-
-The RAG system supports natural language queries that:
-
-- Search through document content semantically
-- Retrieve the most relevant text chunks
-- Generate contextual answers using Gemini
-- Cache results for 5 minutes to improve performance
-
-## Development
-
-### Project Structure
-
 ```text
-magi-poc-rag-ocr-processing/
-├── app.py              # FastAPI application
-├── main.py             # RAG engine and document processing
-├── models.py           # Pydantic data models
-├── requirements.txt    # Python dependencies
-├── gcs_credentials.json # Google Cloud credentials (not in repo)
-└── .env               # Environment variables (not in repo)
-```
 
-### Key Components
+---
 
-- **CustomGeminiEmbedding**: Custom embedding class using Gemini
-- **Document Processing Pipeline**: Text extraction, structuring, chunking
-- **Vector Store Integration**: PostgreSQL with pgvector
-- **Query Engine**: Semantic search with LLM-powered responses
+## Usage Examples
 
-## Limitations
+### Example 1: Document-Specific Conversation
 
-This is a POC implementation with the following limitations:
+```python
+import requests
 
-- Single index per upload (no multi-index support in UI)
-- Basic error handling for document processing
-- No user authentication or authorization
-- Limited scalability testing
-- No monitoring or logging infrastructure
+base_url = "http://localhost:8080"
 
-## Contributing
+# 1. Upload a document
+files = {'files': open('research_paper.pdf', 'rb')}
+upload_response = requests.post(f"{base_url}/upload", files=files)
+document_id = upload_response.json()['document_ids'][0]
 
-This is a proof of concept project. For production use, consider:
+# 2. Create a conversation for this document
+create_conv = requests.post(f"{base_url}/conversation/create", json={
+    "document_id": document_id,
+    "index_name": "default"
+})
+conversation_id = create_conv.json()['conversation_id']
 
-- Adding comprehensive error handling
-- Implementing user management and authentication
-- Adding monitoring and logging
-- Performance optimization for large document sets
-- UI for document management and querying
+# 3. Ask first question
+query1 = requests.post(f"{base_url}/conversation/query", json={
+    "query": "What is the main finding of this research?",
+    "conversation_id": conversation_id,
+    "document_id": document_id
+})
+print("Answer 1:", query1.json()['answer'])
 
-## License
+# 4. Ask follow-up question (context is maintained)
+query2 = requests.post(f"{base_url}/conversation/query", json={
+    "query": "Can you elaborate on that finding?",
+    "conversation_id": conversation_id,
+    "document_id": document_id
+})
+print("Answer 2:", query2.json()['answer'])
 
-[Add appropriate license information]
+# 5. Ask another follow-up
+query3 = requests.post(f"{base_url}/conversation/query", json={
+    "query": "What are the implications?",
+    "conversation_id": conversation_id,
+    "document_id": document_id
+})
+print("Answer 3:", query3.json()['answer'])
+```text
 
-## Contact
+### Example 2: Quick Conversational Query
 
-For questions or support, please contact the development team.
+```python
+
+# Auto-create conversation and query in one step
+response = requests.post(f"{base_url}/conversation/query", json={
+    "query": "Summarize this document",
+    "document_id": "doc-uuid-123"
+})
+print("Answer:", response.json()['answer'])
+print("Conversation ID:", response.json()['conversation_id'])
+```text
+
+### Example 3: Multi-Document Conversation
+
+```python
+
+# Create general conversation (not tied to specific document)
+create_conv = requests.post(f"{base_url}/conversation/create", json={
+    "index_name": "default"
+})
+conversation_id = create_conv.json()['conversation_id']
+
+# Query across all documents
+query = requests.post(f"{base_url}/conversation/query", json={
+    "query": "Compare the findings from all research papers",
+    "conversation_id": conversation_id
+})
+```text
+
+---
+
+## Key Features
+
+### 1. **Context Retention**
+The system maintains the last 5 messages in conversation history to provide context for each new query.
+
+### 2. **Document Filtering**
+When `document_id` is provided, the system focuses queries on that specific document.
+
+### 3. **Flexible Workflow**
+
+- Create conversation first, then query (explicit)
+- Query directly and auto-create conversation (implicit)
+- Mix document-specific and general queries
+
+### 4. **Conversation Management**
+
+- Track all conversations
+- View conversation history
+- Delete old conversations
+- Associate conversations with documents
+
+---
+
+## Technical Implementation
+
+### Conversation Storage
+Conversations are stored in-memory with this structure:
+
+```python
+conversations_store[conversation_id] = {
+    "conversation": {
+        "conversation_id": str,
+        "document_id": Optional[str],
+        "document_name": Optional[str],
+        "index_name": str,
+        "created_at": datetime,
+        "updated_at": datetime
+    },
+    "messages": [
+        {"role": "user", "content": str, "timestamp": datetime},
+        {"role": "assistant", "content": str, "timestamp": datetime}
+    ]
+}
+```text
+
+### Query Processing
+The `query_rag_conversational` function:
+1. Retrieves conversation history
+2. Builds contextual prompt with last 5 messages
+3. Adds document filter if specified
+4. Queries the RAG system with full context
+5. Returns contextual answer
+
+---
+
+## Migration Guide
+
+### Old Code (Response AI)
+
+```python
+response = requests.post("http://localhost:8080/query", json={
+    "query": "What is this about?"
+})
+```text
+
+### New Code (Conversational AI)
+
+```python
+
+# Option 1: Use conversation endpoint
+response = requests.post("http://localhost:8080/conversation/query", json={
+    "query": "What is this about?",
+    "document_id": "doc-123"
+})
+
+# Option 2: Keep using /query for stateless queries (backward compatible)
+response = requests.post("http://localhost:8080/query", json={
+    "query": "What is this about?"
+})
+```text
+
+---
+
+## Best Practices
+
+1. **Create conversations explicitly** for better tracking
+2. **Include document_id** for document-specific conversations
+3. **Reuse conversation_id** for follow-up questions
+4. **Clean up old conversations** periodically
+5. **Use /query endpoint** for one-off questions without context
+
+---
+
+## Future Enhancements
+
+- Persistent conversation storage (database)
+- Conversation search and filtering
+- Export conversation history
+- Conversation analytics
+- Multi-user support with authentication
+- Conversation sharing
+
+---
+
+## Support
+
+For issues or questions, please refer to the main README.md or contact the development team.
