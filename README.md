@@ -115,6 +115,39 @@ Once the server is running, visit:
 - **Interactive API Docs**: `http://127.0.0.1:8000/docs` (Swagger UI)
 - **Alternative Docs**: `http://127.0.0.1:8000/redoc` (ReDoc)
 
+## Frontend
+
+A web-based frontend is included for easy interaction with the RAG system.
+
+### Running the Frontend
+
+#### Option 1: Direct Access
+
+1. **Start the backend server** as described above
+2. **Open `frontend.html`** directly in your web browser
+3. **Update the API_BASE URL** in the JavaScript if your backend is running on a different host/port
+
+#### Option 2: Served by Backend
+
+1. **Start the backend server** as described above
+2. **Visit `http://127.0.0.1:8000/frontend`** in your web browser
+
+### Frontend Features
+
+- **Document Upload**: Upload multiple documents with drag-and-drop or file selection
+- **Document Management**: View all uploaded documents with metadata
+- **Conversational Chat**: Ask questions about selected documents in a chat interface
+- **Conversation History**: View and manage conversation history
+- **Real-time Updates**: Automatic updates of document and conversation lists
+
+### Usage Instructions
+
+1. **Upload Documents**: Click "Choose Files" and select documents to upload
+2. **Select Document**: Click on a document from the list to start chatting about it
+3. **Ask Questions**: Type your questions in the chat input and press Enter or click Send
+4. **View Conversations**: Click on conversations in the sidebar to view previous chats
+5. **Start New Conversation**: Click "New Conversation" to clear the current chat
+
 ## API Endpoints
 
 ### 1. Health Check
@@ -173,20 +206,28 @@ curl -X POST "http://127.0.0.1:8000/upload" \
 }
 ```
 
-### 3. Query the RAG System (Conversational)
+### 3. Query the RAG System (Conversational Document-Based Flow)
 
 ```http
 POST /query
 ```
 
-Query the system for information based on ingested documents with conversation context.
+Query the system using an intelligent conversational flow that manages document context automatically.
+
+**New Conversational Flow:**
+
+1. **Initial Query**: User asks a question without specifying a document
+2. **Document Selection**: System asks "From which document are you asking?"
+3. **Answer & Follow-up**: System answers and asks "Do you need any other clarification about this document or any other document?"
+4. **Document Switching**: If information isn't available, system offers to check other documents
+5. **Context Preservation**: All conversations maintain document-based context
 
 **Request Body:**
 
 ```json
 {
-  "query": "What are the main points discussed in the uploaded documents?",
-  "filename": "document.pdf",
+  "query": "Who is inspected and approved?",
+  "filename": null,  // Optional - if not provided, system will ask for document
   "index_name": "default",
   "top_k": 5
 }
@@ -195,28 +236,40 @@ Query the system for information based on ingested documents with conversation c
 **Parameters:**
 
 - `query`: The natural language question to ask
-- `filename`: The filename of the document to query (creates conversation if doesn't exist)
+- `filename`: Optional filename of the document to query (if not provided, system manages document selection)
 - `index_name`: Which document index to search (default: "default")
 - `top_k`: Number of similar documents to consider (optional, default: 5)
 
-**Example using curl:**
+**Example Conversation Flow:**
 
 ```bash
+# 1. Initial query (no document specified)
 curl -X POST "http://127.0.0.1:8000/query" \
      -H "Content-Type: application/json" \
-     -d '{
-       "query": "Summarize the key findings from the documents",
-       "filename": "report.pdf",
-       "index_name": "default",
-       "top_k": 3
-     }'
+     -d '{"query": "Who is inspected and approved?"}'
+
+# Response: "From which document are you asking?"
+
+# 2. User provides document name
+curl -X POST "http://127.0.0.1:8000/query" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "inspection_report.pdf"}'
+
+# Response: "[Answer from document] Do you need any other clarification about this document or any other document?"
+
+# 3. User asks follow-up question
+curl -X POST "http://127.0.0.1:8000/query" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "What is the product?"}'
+
+# Response: "[Answer] Do you need any other clarification about this document or any other document?"
 ```
 
 **Response:**
 
 ```json
 {
-  "filename": "report.pdf",
+  "filename": "inspection_report.pdf",
   "message": {
     "role": "user",
     "content": "Summarize the key findings from the documents",
