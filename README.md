@@ -1,414 +1,208 @@
-# MAGI LlamaIndex RAG POC FastAPI
+# MAGI RAG System - FastAPI Backend
 
-A Retrieval-Augmented Generation (RAG) system built with FastAPI, LlamaIndex, and Google Gemini AI. This system allows you to upload documents, automatically process them, and query for information using natural language.
+A production-ready Retrieval-Augmented Generation (RAG) system built with FastAPI, LlamaIndex, PostgreSQL (pgvector), and Google Gemini AI. Upload documents, process them automatically, and query using natural language with real-time streaming responses.
 
-## Features
+## 🚀 Features
 
-- **Document Upload & Processing**: Upload various file types (PDF, DOCX, images, emails, etc.) to Google Cloud Storage
-- **Automatic Text Extraction**: Uses Google Gemini AI to extract text from multiple file formats
-- **Structured Data Extraction**: Automatically extracts metadata like title, author, summary, key points, and entities
-- **Vector Storage**: Stores document embeddings in PostgreSQL with pgvector for efficient similarity search
-- **Natural Language Querying**: Query the system using natural language to get relevant answers
-- **RESTful API**: Clean FastAPI-based REST API for easy integration
-- **Multiple Index Support**: Support for multiple document indexes/namespaces
-- **Background Processing**: Asynchronous document ingestion for better performance
-- **Query Caching**: In-memory caching for improved response times
-- **Comprehensive File Support**: Handles 20+ file formats including documents, images, and emails
+### Core Capabilities
 
-## Supported File Types
+- **📄 Document Management**: Upload, process, and delete documents across multiple storage locations
+- **🔍 Intelligent RAG**: Hybrid search combining BM25 + vector similarity with cross-encoder re-ranking
+- **💬 Conversational AI**: Context-aware conversations with streaming responses via SSE
+- **📊 Real-time Status Tracking**: Monitor document ingestion status (pending → processing → completed/failed)
+- **🗄️ Multi-Storage Architecture**: PostgreSQL (metadata + vectors), GCS (files), in-memory caching
+- **🔄 Background Processing**: Asynchronous document ingestion with status updates
+
+### Advanced Features
+
+- **Query Expansion**: Gemini-powered query variations for better retrieval
+- **Structured Extraction**: Automatic metadata extraction (title, author, summary, entities)
+- **Hybrid Search**: 70% vector similarity + 30% BM25 keyword matching
+- **Cross-Encoder Re-ranking**: Improves relevance scoring using sentence-transformers
+- **Conversation Persistence**: Full conversation history stored and retrievable
+- **Orphaned Table Cleanup**: Utility to clean up orphaned vector tables
+
+## 📋 Supported File Types
 
 - **Documents**: PDF, DOCX, DOC, TXT, RTF, HTML, HTM, MD
-- **Data Files**: CSV
-- **Images**: JPEG, PNG, GIF, BMP, TIFF
-- **Email**: EML, MSG, MBOX, MBOX
-- **Archives**: ZIP (with document contents)
+- **Data**: CSV
+- **Images**: JPEG, PNG, GIF, BMP, TIFF (OCR via Gemini Vision)
+- **Email**: EML, MSG, MBOX
+- **Archives**: ZIP (extracts and processes contents)
 
-## Prerequisites
+## 🛠️ Technology Stack
 
-- **Python 3.8+**
-- **Google Cloud Platform account** with:
-  - Google Cloud Storage bucket
-  - Service account with appropriate permissions
-  - Google AI API key (for Gemini)
-- **PostgreSQL database** with pgvector extension enabled
-- **Google Cloud credentials JSON file**
+### Core Framework
 
-## Installation
+- **FastAPI**: High-performance async web framework
+- **Python 3.12+**: Modern Python with full type hints
+- **Uvicorn**: Lightning-fast ASGI server
 
-1. **Clone the repository:**
+### AI & ML
 
-   ```bash
-   git clone <repository-url>
-   cd magi_rag_poc_fastapi
-   ```
+- **LlamaIndex 0.10.28**: RAG orchestration framework
+- **Google Gemini 2.5 Flash**: LLM for generation and analysis
+- **Sentence Transformers**: Cross-encoder re-ranking
+- **BM25**: Keyword-based retrieval
 
-2. **Create virtual environment:**
+### Storage & Database
 
-   ```bash
-   python -m venv .venv
-   # On Windows:
-   .venv\Scripts\activate
-   # On macOS/Linux:
-   source .venv/bin/activate
-   ```
+- **PostgreSQL + pgvector**: Vector storage and similarity search
+- **Google Cloud Storage**: Document blob storage
+- **psycopg2**: PostgreSQL adapter
 
-3. **Install dependencies:**
+### Data Processing
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+- **python-docx**: Word document parsing
+- **BeautifulSoup4**: HTML parsing
+- **pandas**: CSV/Excel processing
+- **python-magic**: File type detection
 
-4. **Set up environment variables** by creating a `.env` file:
+## 📦 Prerequisites
 
-   ```env
-   # Google Cloud Configuration
-   GOOGLE_API_KEY=your_google_ai_api_key_here
-   GOOGLE_APPLICATION_CREDENTIALS=gcs_credentials.json
-   GCS_BUCKET_NAME=your_gcs_bucket_name
+### Required Services
 
-   # Database Configuration
-   DB_HOST=localhost
-   DB_PORT=5434
-   DB_NAME=RAG_OCR_POC_DB
-   DB_USER=postgres
-   DB_PASSWORD=your_database_password
+1. **PostgreSQL Database** (with pgvector extension)
+   - Version: 12+
+   - Extension: `pgvector` enabled
 
-   # Application Configuration
-   APP_HOST=127.0.0.1
-   APP_PORT=8000
+2. **Google Cloud Platform**
+   - Cloud Storage bucket
+   - Service account with Storage Admin role
+   - Gemini API access
 
-   # Vector Database Configuration
-   VECTOR_DIMENSION=768
-   SIMILARITY_TOP_K=5
-   ```
+3. **API Keys**
 
-5. **Place your Google Cloud service account credentials** in `gcs_credentials.json`
+   - Google AI API key (for Gemini models)
 
-6. **Ensure your PostgreSQL database has the pgvector extension:**
+## 🔧 Installation
 
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS vector;
-   ```
-
-## Usage
-
-### Starting the Server
-
-#### Option 1: Using uvicorn directly
+### 1. Clone Repository
 
 ```bash
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+git clone <repository-url>
+cd magi_rag_poc_fastapi
 ```
 
-#### Option 2: Running the app directly
+### 2. Create Virtual Environment
 
 ```bash
-python app.py
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# Linux/Mac
+source .venv/bin/activate
 ```
 
-The API will be available at `http://127.0.0.1:8000`
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Set Up Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=your_database_name
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+
+# Google Cloud Storage
+GCS_BUCKET_NAME=your-gcs-bucket-name
+
+# Google AI
+GOOGLE_API_KEY=your_google_ai_api_key
+
+# Server Configuration
+APP_HOST=127.0.0.1
+APP_PORT=8000
+```
+
+### 5. Set Up Google Cloud Credentials
+
+Place your GCS service account JSON file as `gcs_credentials.json` in the root directory:
+
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "...",
+  "private_key": "...",
+  "client_email": "...",
+  "client_id": "...",
+  ...
+}
+```
+
+### 6. Initialize Database
+
+The application automatically creates required tables on startup:
+
+- `documents`: Document metadata and ingestion status
+- `conversations`: Conversation history with messages
+
+Enable pgvector extension manually in PostgreSQL:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+## 🚦 Running the Application
+
+### Start the Server
+
+```bash
+uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The server will start on: **<http://127.0.0.1:8000>**
 
 ### API Documentation
 
-Once the server is running, visit:
+- **Swagger UI**: <http://127.0.0.1:8000/docs>
+- **ReDoc**: <http://127.0.0.1:8000/redoc>
 
-- **Interactive API Docs**: `http://127.0.0.1:8000/docs` (Swagger UI)
-- **Alternative Docs**: `http://127.0.0.1:8000/redoc` (ReDoc)
+## 📡 API Endpoints
 
-## Frontend
+### Document Management
 
-A web-based frontend is included for easy interaction with the RAG system.
-
-### Running the Frontend
-
-#### Option 1: Direct Access
-
-1. **Start the backend server** as described above
-2. **Open `frontend.html`** directly in your web browser
-3. **Update the API_BASE URL** in the JavaScript if your backend is running on a different host/port
-
-#### Option 2: Served by Backend
-
-1. **Start the backend server** as described above
-2. **Visit `http://127.0.0.1:8000/frontend`** in your web browser
-
-### Frontend Features
-
-- **Document Upload**: Upload multiple documents with drag-and-drop or file selection
-- **Document Management**: View all uploaded documents with metadata
-- **Conversational Chat**: Ask questions about selected documents in a chat interface
-- **Conversation History**: View and manage conversation history
-- **Real-time Updates**: Automatic updates of document and conversation lists
-
-### Usage Instructions
-
-1. **Upload Documents**: Click "Choose Files" and select documents to upload
-2. **Select Document**: Click on a document from the list to start chatting about it
-3. **Ask Questions**: Type your questions in the chat input and press Enter or click Send
-4. **View Conversations**: Click on conversations in the sidebar to view previous chats
-5. **Start New Conversation**: Click "New Conversation" to clear the current chat
-
-## API Endpoints
-
-### 1. Health Check
-
-```http
-GET /
-```
-
-**Response:**
-
-```json
-{
-  "message": "Conversational RAG System API",
-  "features": [
-    "Document upload and ingestion",
-    "Conversational queries with context",
-    "Document-specific conversations",
-    "Multi-turn dialogue support",
-    "Conversation history management"
-  ]
-}
-```
-
-### 2. Upload Files
+#### Upload Documents
 
 ```http
 POST /upload
-```
+Content-Type: multipart/form-data
 
-Upload files to be processed and ingested into the RAG system.
-
-**Parameters:**
-
-- `files`: List of files to upload (multipart/form-data)
-- `index_name`: Name of the index to store documents in (default: "default")
-
-**Supported file types:** PDF, DOCX, DOC, TXT, RTF, HTML, MD, CSV, JPG, PNG, GIF, BMP, TIFF, EML, MSG, MBOX
-
-**Example using curl:**
-
-```bash
-curl -X POST "http://127.0.0.1:8000/upload" \
-     -F "files=@document.pdf" \
-     -F "files=@report.docx" \
-     -F "index_name=my_documents"
+files: <file1>, <file2>, ...
+index_name: "default" (optional)
 ```
 
 **Response:**
 
 ```json
 {
-  "message": "Successfully uploaded 2 files. Ingestion started in background.",
-  "uploaded_files": ["uuid1_document.pdf", "uuid2_report.docx"],
-  "document_ids": ["doc-id-1", "doc-id-2"],
-  "status": "ingestion_in_progress"
-}
-```
-
-### 3. Query the RAG System (Conversational Document-Based Flow)
-
-```http
-POST /query
-```
-
-Query the system using an intelligent conversational flow that manages document context automatically.
-
-**New Conversational Flow:**
-
-1. **Initial Query**: User asks a question without specifying a document
-2. **Document Selection**: System asks "From which document are you asking?"
-3. **Answer & Follow-up**: System answers and asks "Do you need any other clarification about this document or any other document?"
-4. **Document Switching**: If information isn't available, system offers to check other documents
-5. **Context Preservation**: All conversations maintain document-based context
-
-**Request Body:**
-
-```json
-{
-  "query": "Who is inspected and approved?",
-  "filename": null,  // Optional - if not provided, system will ask for document
-  "index_name": "default",
-  "top_k": 5
-}
-```
-
-**Parameters:**
-
-- `query`: The natural language question to ask
-- `filename`: Optional filename of the document to query (if not provided, system manages document selection)
-- `index_name`: Which document index to search (default: "default")
-- `top_k`: Number of similar documents to consider (optional, default: 5)
-
-**Example Conversation Flow:**
-
-```bash
-# 1. Initial query (no document specified)
-curl -X POST "http://127.0.0.1:8000/query" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "Who is inspected and approved?"}'
-
-# Response: "From which document are you asking?"
-
-# 2. User provides document name
-curl -X POST "http://127.0.0.1:8000/query" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "inspection_report.pdf"}'
-
-# Response: "[Answer from document] Do you need any other clarification about this document or any other document?"
-
-# 3. User asks follow-up question
-curl -X POST "http://127.0.0.1:8000/query" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "What is the product?"}'
-
-# Response: "[Answer] Do you need any other clarification about this document or any other document?"
-```
-
-**Response:**
-
-```json
-{
-  "filename": "inspection_report.pdf",
-  "message": {
-    "role": "user",
-    "content": "Summarize the key findings from the documents",
-    "timestamp": "2024-01-15T10:30:00Z",
-    "document_id": "doc-id-123"
-  },
-  "answer": "Based on the uploaded documents, the key findings include: 1) Market analysis shows 15% growth, 2) Customer satisfaction improved by 23%, 3) New product launch scheduled for Q2..."
-}
-```
-
-### 4. Get Conversation
-
-```http
-GET /conversation/{filename}
-```
-
-Get the conversation history and details for a specific document.
-
-**Parameters:**
-
-- `filename`: The filename of the document
-
-**Example using curl:**
-
-```bash
-curl -X GET "http://127.0.0.1:8000/conversation/document.pdf"
-```
-
-**Response:**
-
-```json
-{
-  "conversation": {
-    "filename": "document.pdf",
-    "document_id": "doc-id-123",
-    "index_name": "default",
-    "messages": [],
-    "created_at": "2024-01-15T10:00:00Z",
-    "updated_at": "2024-01-15T10:30:00Z"
-  },
-  "messages": [
+  "message": "Files uploaded successfully",
+  "documents": [
     {
-      "role": "user",
-      "content": "What is this document about?",
-      "timestamp": "2024-01-15T10:15:00Z",
-      "document_id": "doc-id-123"
-    },
-    {
-      "role": "assistant",
-      "content": "This document discusses market analysis and growth projections...",
-      "timestamp": "2024-01-15T10:15:05Z",
-      "document_id": "doc-id-123"
+      "document_id": "uuid",
+      "filename": "document.pdf",
+      "blob_name": "uuid_document.pdf",
+      "ingestion_status": "pending"
     }
   ]
 }
 ```
 
-### 5. List All Conversations
+#### Get All Documents
 
 ```http
-GET /conversations
-```
-
-Get a list of all conversations stored in the database.
-
-**Example using curl:**
-
-```bash
-curl -X GET "http://127.0.0.1:8000/conversations"
-```
-
-**Response:**
-
-```json
-{
-  "conversations": [
-    {
-      "filename": "document1.pdf",
-      "document_id": "doc-id-123",
-      "index_name": "default",
-      "created_at": "2024-01-15T10:00:00Z",
-      "updated_at": "2024-01-15T10:30:00Z",
-      "message_count": 4
-    },
-    {
-      "filename": "document2.docx",
-      "document_id": "doc-id-456",
-      "index_name": "default",
-      "created_at": "2024-01-15T11:00:00Z",
-      "updated_at": "2024-01-15T11:15:00Z",
-      "message_count": 2
-    }
-  ],
-  "total": 2
-}
-```
-
-### 6. Delete Conversation
-
-```http
-DELETE /conversation/{filename}
-```
-
-Delete a conversation and its history from both memory and database.
-
-**Parameters:**
-
-- `filename`: The filename of the document conversation to delete
-
-**Example using curl:**
-
-```bash
-curl -X DELETE "http://127.0.0.1:8000/conversation/document.pdf"
-```
-
-**Response:**
-
-```json
-{
-  "message": "Conversation for document.pdf deleted successfully"
-}
-```
-
-### 7. List Documents
-
-```http
-GET /documents
-```
-
-List all documents in a specific index.
-
-**Parameters:**
-
-- `index_name`: Name of the index to list documents from (default: "default")
-
-**Example using curl:**
-
-```bash
-curl -X GET "http://127.0.0.1:8000/documents?index_name=default"
+GET /documents?index_name=default
 ```
 
 **Response:**
@@ -417,296 +211,401 @@ curl -X GET "http://127.0.0.1:8000/documents?index_name=default"
 {
   "documents": [
     {
-      "document_id": "doc-id-123",
+      "document_id": "uuid",
       "filename": "document.pdf",
-      "upload_timestamp": "2024-01-15T10:00:00Z",
+      "source": "upload",
+      "upload_timestamp": "2025-11-11T10:00:00",
       "index_name": "default",
       "mime_type": "application/pdf",
-      "file_size": 1024000
+      "file_size": 1024000,
+      "blob_name": "uuid_document.pdf",
+      "ingestion_status": "completed"
     }
-  ],
-  "total": 1,
-  "index_name": "default"
+  ]
 }
 ```
 
-### 8. Get Document Metadata
+#### Check Ingestion Status
 
 ```http
-GET /document/{filename}
-```
-
-Get metadata for a specific document.
-
-**Parameters:**
-
-- `filename`: The filename of the document
-
-**Example using curl:**
-
-```bash
-curl -X GET "http://127.0.0.1:8000/document/document.pdf"
+GET /ingestion-status?document_ids=uuid1,uuid2
 ```
 
 **Response:**
 
 ```json
 {
-  "document_id": "doc-id-123",
-  "filename": "document.pdf",
-  "upload_timestamp": "2024-01-15T10:00:00Z",
-  "index_name": "default",
-  "mime_type": "application/pdf",
-  "file_size": 1024000
+  "uuid1": "completed",
+  "uuid2": "processing"
 }
 ```
 
-## Conversational Features
+#### Delete Document
 
-This RAG system supports multi-turn conversations with document-specific context. Key features include:
+```http
+DELETE /document/{document_id}?bucket_name=your-bucket
+```
 
-### Document-Specific Conversations
+**Response:**
 
-- **Per-Document Context**: Each uploaded document gets its own conversation thread
-- **Persistent History**: Conversation history is maintained across queries
-- **Contextual Responses**: The system remembers previous questions and answers within each document's conversation
+```json
+{
+  "message": "Document deleted successfully",
+  "document_id": "uuid",
+  "deleted_from": [
+    "documents_table",
+    "vector_table",
+    "conversations_table",
+    "in_memory_stores",
+    "gcs_bucket"
+  ],
+  "errors": []
+}
+```
 
 ### Conversation Management
 
-- **Automatic Creation**: Conversations are created automatically when you first query a document
-- **History Retrieval**: Get complete conversation history for any document
-- **Conversation Listing**: View all active conversations across all documents
-- **Conversation Deletion**: Remove conversations when no longer needed
+#### Query with Streaming Response
 
-### Query Enhancement
+```http
+POST /query
+Content-Type: application/json
 
-- **Context-Aware Queries**: Each query considers the conversation history for more relevant responses
-- **Follow-up Questions**: Ask follow-up questions that reference previous context
-- **Document Grounding**: All responses are grounded in the specific document being queried
-
-**Example Conversation Flow:**
-
-1. Upload `annual_report.pdf`
-2. Query: "What are the main revenue streams?"
-3. Follow-up: "How has revenue changed compared to last year?"
-4. Follow-up: "What are the biggest challenges mentioned?"
-
-The system maintains context across all these queries, providing coherent and document-specific responses.
-
-## Architecture
-
-### Core Components
-
-1. **FastAPI Application** (`app.py`)
-   - REST API endpoints
-   - File upload handling
-   - Background task processing
-   - Error handling and validation
-
-2. **RAG Engine** (`main.py`)
-   - Document processing and text extraction
-   - Structured data extraction using Gemini AI
-   - Vector embeddings generation and storage
-   - Query processing with caching
-   - Multiple index support
-
-3. **Data Models** (`models.py`)
-   - Pydantic models for API requests/responses
-   - Document metadata structures
-   - Structured document data schemas
-
-4. **External Services**
-   - **Google Cloud Storage**: File storage for uploaded documents
-   - **PostgreSQL + pgvector**: Vector database for embeddings
-   - **Google Gemini AI**: LLM for text extraction and query responses
-
-### Data Processing Pipeline
-
-1. **Upload Phase**:
-   - Files uploaded via API → Validated for supported formats
-   - Stored in Google Cloud Storage with unique identifiers
-   - Document metadata created and tracked
-
-2. **Ingestion Phase** (Background Processing):
-   - Files downloaded from GCS
-   - Text extracted using Gemini AI or fallback parsers
-   - Structured data (title, summary, entities) extracted
-   - Documents chunked into smaller segments
-   - Embeddings generated and stored in vector database
-
-3. **Query Phase**:
-   - Natural language query received
-   - Query converted to embedding vector
-   - Similarity search performed in vector database
-   - Relevant document chunks retrieved
-   - LLM generates contextual response
-
-### Key Features
-
-- **Asynchronous Processing**: File ingestion happens in background tasks
-- **Query Caching**: 5-minute in-memory cache for improved performance
-- **Multiple Indexes**: Support for separate document namespaces
-- **Comprehensive Text Extraction**: Handles 20+ file formats
-- **Structured Metadata**: Automatic extraction of document properties
-- **Error Handling**: Robust error handling with detailed logging
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `GOOGLE_API_KEY` | Google AI API key for Gemini | - | Yes |
-| `GCS_BUCKET_NAME` | Google Cloud Storage bucket name | - | Yes |
-| `DB_HOST` | PostgreSQL host | - | Yes |
-| `DB_PORT` | PostgreSQL port | 5434 | No |
-| `DB_NAME` | PostgreSQL database name | - | Yes |
-| `DB_USER` | PostgreSQL username | - | Yes |
-| `DB_PASSWORD` | PostgreSQL password | - | Yes |
-| `APP_HOST` | FastAPI server host | 127.0.0.1 | No |
-| `APP_PORT` | FastAPI server port | 8000 | No |
-| `VECTOR_DIMENSION` | Embedding vector dimension | 768 | No |
-| `SIMILARITY_TOP_K` | Documents to retrieve for queries | 5 | No |
-
-### Google Cloud Setup
-
-1. **Create a Google Cloud Project**
-2. **Enable required APIs**:
-   - Google Cloud Storage API
-   - Google AI (Gemini) API
-3. **Create a service account** with these roles:
-   - Storage Admin (for GCS access)
-   - AI Platform Developer (for Gemini API)
-4. **Download the service account key** as JSON and save as `gcs_credentials.json`
-
-### Database Setup
-
-1. **Install PostgreSQL** with pgvector extension
-2. **Create database**:
-
-   ```sql
-   CREATE DATABASE RAG_OCR_POC_DB;
-   ```
-
-3. **Enable pgvector**:
-
-   ```sql
-   \c RAG_OCR_POC_DB;
-   CREATE EXTENSION IF NOT EXISTS vector;
-   ```
-
-## Development
-
-### Project Structure
-
-```text
-magi_rag_poc_fastapi/
-├── app.py                    # FastAPI application and API endpoints
-├── main.py                   # Core RAG functionality and processing
-├── models.py                 # Pydantic data models and schemas
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variables (create from template)
-├── gcs_credentials.json      # Google Cloud credentials (not in repo)
-├── README.md                 # This documentation
-├── .gitignore               # Git ignore rules
-└── .venv/                   # Virtual environment (not in repo)
+{
+  "query": "What is the main topic?",
+  "filename": "document.pdf",
+  "index_name": "default",
+  "top_k": 5
+}
 ```
 
-### Dependencies
+**Response:** Server-Sent Events (SSE) stream
 
-**Core Framework:**
+```text
+data: {"type": "token", "content": "The "}
+data: {"type": "token", "content": "main "}
+data: {"type": "token", "content": "topic..."}
+data: {"type": "complete", "full_response": "The main topic...", "sources": [...]}
+```
 
-- `fastapi` - Web framework
-- `uvicorn` - ASGI server
+#### Get All Conversations
 
-**AI/ML:**
+```http
+GET /conversations?index_name=default
+```
 
-- `llama-index` - RAG framework
-- `google-generativeai` - Gemini AI integration
-- `llama-index-llms-gemini` - LlamaIndex Gemini integration
+**Response:**
 
-**Database:**
+```json
+{
+  "conversations": [
+    {
+      "filename": "document.pdf",
+      "document_id": "uuid",
+      "index_name": "default",
+      "created_at": "2025-11-11T10:00:00",
+      "updated_at": "2025-11-11T10:05:00",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Question",
+          "timestamp": "2025-11-11T10:00:00"
+        },
+        {
+          "role": "assistant",
+          "content": "Answer",
+          "timestamp": "2025-11-11T10:00:01"
+        }
+      ]
+    }
+  ]
+}
+```
 
-- `psycopg2-binary` - PostgreSQL driver
-- `pgvector` - Vector extension support
-- `llama-index-vector-stores-postgres` - Vector store integration
+#### Delete Conversation
 
-**File Processing:**
+```http
+DELETE /conversation/{filename}
+```
 
-- `python-docx` - Word document processing
-- `python-magic-bin` - File type detection
-- `beautifulsoup4` - HTML parsing
-- `pandas` - CSV processing
-- `lxml` - XML/HTML parsing
+### Utility Endpoints
 
-**Cloud Services:**
+#### Cleanup Orphaned Vector Tables
 
-- `google-cloud-storage` - GCS integration
+```http
+POST /cleanup-orphaned-tables
+```
 
-**Utilities:**
+**Response:**
 
-- `python-dotenv` - Environment variable management
-- `python-multipart` - Multipart form data handling
+```json
+{
+  "message": "Cleanup completed",
+  "dropped_tables": ["table1", "table2"],
+  "errors": []
+}
+```
 
-## Troubleshooting
+#### Health Check
+
+```http
+GET /
+```
+
+## 🏗️ Architecture
+
+### Data Flow
+
+```text
+Upload → GCS Storage → Background Ingestion → Vector Index → Query → Response
+                              ↓
+                    Status Updates (pending/processing/completed)
+```
+
+### Storage Layers
+
+1. **PostgreSQL**
+   - `documents` table: Metadata + ingestion status
+   - `conversations` table: Chat history
+   - `data_data_vectors_{uuid}` tables: Vector embeddings per document
+
+2. **Google Cloud Storage**
+   - Raw document blobs
+   - Unique naming: `{uuid}_{filename}`
+
+3. **In-Memory Cache**
+   - `documents_store`: Quick metadata access
+   - `conversations_store`: Active conversation cache
+
+### Document Processing Pipeline
+
+```text
+1. Upload → GCS
+2. Store metadata (status: pending)
+3. Background task starts (status: processing)
+4. Extract text (Gemini Vision for images)
+5. Generate embeddings (Gemini text-embedding-004)
+6. Create vector index in PostgreSQL
+7. Extract structured metadata
+8. Update status → completed/failed
+9. Frontend polls status → shows notification
+```
+
+### Query Processing
+
+```text
+1. User query
+2. Query expansion (Gemini generates variations)
+3. Hybrid retrieval:
+   - Vector similarity search (70%)
+   - BM25 keyword search (30%)
+4. Cross-encoder re-ranking
+5. Context building
+6. Gemini 2.5 Flash generation
+7. Stream response via SSE
+8. Save conversation history
+```
+
+## 🗄️ Database Schema
+
+### documents Table
+
+```sql
+CREATE TABLE documents (
+    document_id VARCHAR(255) PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    source VARCHAR(50) DEFAULT 'upload',
+    upload_timestamp TIMESTAMP NOT NULL,
+    index_name VARCHAR(100) DEFAULT 'default',
+    mime_type VARCHAR(100),
+    file_size BIGINT,
+    blob_name VARCHAR(500),
+    ingestion_status VARCHAR(50) DEFAULT 'pending'
+);
+```
+
+### conversations Table
+
+```sql
+CREATE TABLE conversations (
+    filename VARCHAR(255) PRIMARY KEY,
+    document_id VARCHAR(255),
+    index_name VARCHAR(100) DEFAULT 'default',
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    user_id VARCHAR(100),
+    messages JSONB,
+    state JSONB
+);
+```
+
+## 🔐 Security Considerations
+
+1. **Environment Variables**: Never commit `.env` or `gcs_credentials.json`
+2. **Database Access**: Use read-only user for query operations
+3. **API Rate Limiting**: Implement rate limiting in production
+4. **Input Validation**: All inputs are validated via Pydantic models
+5. **File Upload Limits**: Configure max file size in production
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **"RAG system not properly initialized"**
-   - Check that all environment variables are set correctly
-   - Verify database connection and pgvector extension
-   - Ensure Google Cloud credentials are valid
+#### 1. Import Errors / Module Not Found
 
-2. **File upload fails**
-   - Check file size limits
-   - Verify supported file formats
-   - Ensure GCS bucket exists and credentials have write access
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-3. **Query returns no results**
-   - Confirm documents were successfully ingested
-   - Check correct `index_name` is being used
-   - Verify vector database contains data
+#### 2. PostgreSQL Connection Failed
 
-4. **Google Cloud authentication errors**
-   - Ensure `gcs_credentials.json` exists and is valid
-   - Check service account has required permissions
-   - Verify `GOOGLE_API_KEY` is correct
+- Verify DB credentials in `.env`
+- Ensure PostgreSQL is running
+- Check pgvector extension: `CREATE EXTENSION vector;`
 
-5. **Database connection errors**
-   - Confirm PostgreSQL is running
-   - Check connection parameters in `.env`
-   - Ensure pgvector extension is installed
+#### 3. GCS Authentication Error
 
-### Performance Optimization
+- Verify `gcs_credentials.json` path
+- Check service account permissions
+- Ensure `GOOGLE_APPLICATION_CREDENTIALS` is set
 
-- **Query Caching**: Responses are cached for 5 minutes to improve performance
-- **Background Processing**: File ingestion happens asynchronously
-- **Chunking**: Documents are split into 512-character chunks with 50-character overlap
-- **Similarity Search**: Configurable number of similar documents retrieved
+#### 4. Gemini API Errors
 
-### Monitoring
+- Verify `GOOGLE_API_KEY` in `.env`
+- Check API quota limits
+- Ensure Gemini API is enabled in GCP
 
-- Check console output for detailed processing logs
-- API responses include processing status and document counts
-- Background tasks provide ingestion progress updates
+#### 5. Vector Table Not Deleted
 
-## Contributing
+- Tables use hyphens: `data_data_vectors_{uuid-with-hyphens}`
+- Deletion uses quoted identifiers: `DROP TABLE "table_name"`
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+#### 6. Python 3.12 Compatibility Issues
 
-## License
+- Use versions from requirements.txt
+- LlamaIndex 0.10.28 is compatible with Python 3.12
+- Ensure Pydantic v1.10+ for compatibility
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📊 Performance Optimization
 
-## Support
+### Recommended Settings
 
-For questions or issues:
+#### PostgreSQL
 
-1. Check the troubleshooting section above
-2. Review the API documentation at `/docs`
-3. Check the console logs for detailed error messages
-4. Ensure all prerequisites are properly configured
+```sql
+-- Optimize vector search
+SET max_parallel_workers_per_gather = 4;
+SET effective_cache_size = '4GB';
+```
+
+#### Indexing
+
+```sql
+-- Create indexes for faster queries
+CREATE INDEX idx_documents_index_name ON documents(index_name);
+CREATE INDEX idx_documents_status ON documents(ingestion_status);
+CREATE INDEX idx_conversations_index ON conversations(index_name);
+```
+
+### Scaling Considerations
+
+- Use connection pooling for PostgreSQL
+- Implement Redis for distributed caching
+- Consider horizontal scaling with load balancer
+- Use async workers for background tasks
+
+## 🧪 Development
+
+### Code Structure
+
+```text
+magi_rag_poc_fastapi/
+├── app.py                  # FastAPI application & endpoints
+├── main.py                 # Core RAG logic & document processing
+├── models.py               # Pydantic data models
+├── requirements.txt        # Python dependencies
+├── .env                    # Environment variables (not in repo)
+├── gcs_credentials.json    # GCS service account (not in repo)
+└── README.md              # This file
+```
+
+### Key Functions
+
+#### main.py
+
+- `ingest_files()`: Background document processing
+- `query_rag_conversational()`: Main RAG query handler
+- `delete_document()`: Comprehensive document deletion
+- `cleanup_orphaned_vector_tables()`: Database maintenance
+- `update_document_ingestion_status()`: Status tracking
+
+#### app.py
+
+- `POST /upload`: Document upload handler
+- `POST /query`: Streaming query endpoint
+- `DELETE /document/{id}`: Document deletion
+- `GET /ingestion-status`: Status polling
+- `POST /cleanup-orphaned-tables`: Orphaned table cleanup
+
+#### models.py
+
+- `DocumentMetadata`: Document information model
+- `ConversationMessage`: Message structure
+- `Conversation`: Conversation history model
+- `StructuredDocumentData`: Extracted metadata
+
+## 📝 Environment Variables Reference
+
+| Variable | Description | Example | Required |
+|----------|-------------|---------|----------|
+| `DB_HOST` | PostgreSQL host address | `localhost` | ✅ |
+| `DB_PORT` | PostgreSQL port | `5432` | ✅ |
+| `DB_NAME` | Database name | `rag_database` | ✅ |
+| `DB_USER` | Database username | `postgres` | ✅ |
+| `DB_PASSWORD` | Database password | `your_password` | ✅ |
+| `GCS_BUCKET_NAME` | GCS bucket name | `my-documents-bucket` | ✅ |
+| `GOOGLE_API_KEY` | Gemini API key | `AIza...` | ✅ |
+| `APP_HOST` | Server host | `127.0.0.1` | ❌ |
+| `APP_PORT` | Server port | `8000` | ❌ |
+
+## 🔄 API Response Status Codes
+
+| Code | Meaning | Description |
+|------|---------|-------------|
+| 200 | OK | Request successful |
+| 201 | Created | Resource created successfully |
+| 400 | Bad Request | Invalid request parameters |
+| 404 | Not Found | Resource not found |
+| 500 | Internal Server Error | Server error occurred |
+
+## 📚 Additional Resources
+
+### LlamaIndex Documentation
+
+- <https://docs.llamaindex.ai/>
+
+### FastAPI Documentation
+
+- <https://fastapi.tiangolo.com/>
+
+### Google Gemini API
+
+- <https://ai.google.dev/>
+
+### pgvector Documentation
+
+- <https://github.com/pgvector/pgvector>
+
+## 📧 Support
+
+For issues and questions:
+
+1. Check the troubleshooting section
+2. Review API documentation at `/docs`
+3. Check console logs for detailed errors
+4. Open a GitHub issue
+
+---
+
+Built with ❤️ using FastAPI, LlamaIndex, and Google Gemini AI
